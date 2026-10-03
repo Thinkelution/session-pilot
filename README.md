@@ -13,7 +13,7 @@ Then, in a session, run `/session-pilot:setup`. It asks before changing anything
 For local development: `claude --plugin-dir /path/to/session-pilot`.
 
 ## What you see
-- **Status line:** `🟡 62% · ~9 turns left · 5h 41%`, turning `🟠 … /compact soon` and `🔴 … /compact now`.
+- **Status line:** `🟡 62% · ~9 turns left · 5h limit 48% · weekly 31%`, turning `🟠 … /compact soon` and `🔴 … /compact now`.
 - **Direct alerts:** shown to you, with the exact command to run. Claude is told you already saw them and does not repeat them.
 - **Handoff:** saved at 75%+ and before every compaction; offered to Claude at the next session start in that folder.
 - **Waste notes:** files re-read repeatedly, oversized tool output, and an idle-cache warning.
@@ -22,7 +22,7 @@ For local development: `claude --plugin-dir /path/to/session-pilot`.
 ```bash
 claude plugin install session-pilot-ui@thinkelution
 ```
-A band above the prompt with the context state and a one-click **Compact** button, plus a `/pilot` details pane. It is a *mod*: code that runs inside Claude Code with your permissions, so it is a separate, optional install. Requires Claude Code v2.1.287+. It does not draw in the VS Code extension, cloud sessions or Cowork/chat; the hook alerts still work there. Details: [ui/README.md](ui/README.md).
+A band above the prompt with the context state, a one-click **Compact** button, a **✨ Optimize prompt** button, and 5-hour/weekly limits with time until reset, plus a `/pilot` details pane. It is a *mod*: code that runs inside Claude Code with your permissions, so it is a separate, optional install. Requires Claude Code v2.1.287+. It does not draw in the VS Code extension, cloud sessions or Cowork/chat; the hook alerts still work there. Details: [ui/README.md](ui/README.md).
 
 ## Commands
 | Command | Purpose |

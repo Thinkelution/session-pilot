@@ -35,8 +35,9 @@ if (pct == null) {
   else if (a.level === 'compact') bits.push('/compact soon');
   parts.push(bits.join(' · '));
 }
-const rl = input.rate_limits && input.rate_limits.five_hour;
-if (rl && rl.used_percentage != null) parts.push(`5h ${Math.round(rl.used_percentage)}%`);
+const lim = input.rate_limits || {};
+if (lim.five_hour && lim.five_hour.used_percentage != null) parts.push(`5h limit ${Math.round(lim.five_hour.used_percentage)}%`);
+if (lim.seven_day && lim.seven_day.used_percentage != null) parts.push(`weekly ${Math.round(lim.seven_day.used_percentage)}%`);
 if (L.snoozedUntil()) parts.push('💤');
 
 let out = parts.join(' · ');

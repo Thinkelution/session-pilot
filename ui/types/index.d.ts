@@ -3,6 +3,6 @@ export type Prefs = { asked: boolean; band: 'always' | 'warn' | 'off'; toast: bo
 
 declare module 'claude-code' {
   interface PluginState {
-    'session-pilot-ui': { history: Sample[]; prefs: Prefs }
+    'session-pilot-ui': { history: Sample[]; prefs: Prefs; original: string }
   }
 }

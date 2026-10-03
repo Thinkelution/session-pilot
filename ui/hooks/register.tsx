@@ -7,6 +7,7 @@ const PANE = 'pilot'
 const history = atom({ plugin: 'session-pilot-ui', key: 'history' } as const, [])
 const DEFAULTS: Prefs = { asked: false, band: 'always', toast: true }
 const prefs = atom({ plugin: 'session-pilot-ui', key: 'prefs' } as const, DEFAULTS)
+const original = atom({ plugin: 'session-pilot-ui', key: 'original' } as const, '')
 const STORE_KEY = 'session-pilot-ui:prefs'
 
 const WARN = 60
@@ -99,6 +100,56 @@ async function askPrefs($: any) {
   }
 }
 
+const OPT_SYSTEM =
+  "You rewrite a user's draft prompt for an AI coding assistant. Keep the intent and every specific (file names, commands, constraints, numbers). " +
+  'Make it clear and complete: state the goal, the relevant context, the constraints, and the output you want. ' +
+  'Do not invent facts, do not answer the prompt, and do not add pleasantries. ' +
+  'If it is already clear, return it unchanged. Return only the rewritten prompt: no preamble, no quotes, no explanation.'
+
+// Rewrites the draft in the prompt box with a small model; the person reviews it before sending.
+async function optimizePrompt($: any) {
+  const draft = await $.prompt.read()
+  const text = draft.text.trim()
+  if (text.length < 3) {
+    $.ui.toast('Type a prompt first, then press Optimize prompt.')
+    return
+  }
+  $.ui.toast('Optimizing your prompt…')
+  const r = await $.model.complete({ model: 'haiku', system: OPT_SYSTEM, prompt: text, maxTokens: 1000 })
+  if (!r.isAnswered || !r.text.trim()) {
+    $.ui.toast('Could not optimize that prompt. Your draft is unchanged.')
+    return
+  }
+  await update($, original, () => text)
+  await $.prompt.fill({ text: r.text.trim(), mode: 'replace' })
+  $.ui.toast('Prompt optimized. Review it, then send. Use Undo to get your original back.')
+}
+
+async function undoOptimize($: any) {
+  const o = await read($, original)
+  if (!o) return
+  await $.prompt.fill({ text: o, mode: 'replace' })
+  await update($, original, () => '')
+}
+
+function isVague(text: string) {
+  const t = text.trim()
+  if (t.length < 3 || t.startsWith('/')) return false
+  const words = t.split(/\s+/).length
+  return words <= 8 && !/[\/`.]/.test(t)
+}
+
+function untilReset(iso: string | undefined, now: number) {
+  if (!iso) return ''
+  const ms = Date.parse(iso) - now
+  if (!(ms > 0)) return ''
+  const m = Math.round(ms / 60000)
+  if (m < 60) return ` (resets in ${m}m)`
+  const h = Math.floor(m / 60)
+  if (h < 48) return ` (resets in ${h}h ${m % 60}m)`
+  return ` (resets in ${Math.floor(h / 24)}d ${h % 24}h)`
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'pilot', description: 'Show session-pilot context details in a pane' })
@@ -111,6 +162,11 @@ export const register: Register = on => {
     await sample($)
     await $.ui.open({ id: PANE, title: 'Session pilot' })
     return { text: 'Session pilot pane opened.' }
+  })
+
+  on('prompt.submit', async ($, e, next) => {
+    await update($, original, () => '')
+    return next(e)
   })
 
   on('command.run', { command: 'pilot-settings' }, async $ => {
@@ -143,24 +199,39 @@ export const register: Register = on => {
     if (p.band === 'warn' && lv.n < 1) return next(e)
     const left = runway(list)
     const u = await $.session.usage()
+    const now = await $.clock.now()
     const five = u.rateLimits.find((r: { kind: string }) => r.kind === 'five_hour')
+    const week = u.rateLimits.find((r: { kind: string }) => r.kind === 'seven_day')
+    const undo = await read($, original)
+    const draft = await $.prompt.read()
+    const vague = isVague(draft.text)
     const { Box, Text, Button } = $.ui.resolve(e)
 
     return (
-      <Box>
-        <Text color={lv.color} bold>
-          {lv.emoji} {Math.round(last.pct)}%{' '}
-        </Text>
-        <Text dimColor>
-          {fmt(last.tokens)}/{fmt(last.window)}
-          {left !== null && lv.n < 3 ? ` · ~${left} turns left` : ''}
-          {five ? ` · 5h ${Math.round(five.percentUsed)}%` : ''}
-          {lv.n >= 1 ? ` · ${lv.label}` : ''}
-          {'  '}
-        </Text>
-        {lv.n >= 1 && <Button key="compact" label="Compact" onPress={() => compact($)} />}
-        <Button key="details" label="Details" onPress={() => $.ui.open({ id: PANE, title: 'Session pilot', focus: true })} />
-        <Button key="hide" label="Hide" onPress={() => savePrefs($, { ...p, band: 'off' })} />
+      <Box flexDirection="column">
+        <Box>
+          <Text color={lv.color} bold>
+            {lv.emoji} {Math.round(last.pct)}%{' '}
+          </Text>
+          <Text dimColor>
+            {fmt(last.tokens)}/{fmt(last.window)}
+            {left !== null && lv.n < 3 ? ` · ~${left} turns left` : ''}
+            {lv.n >= 1 ? ` · ${lv.label}` : ''}
+            {'  '}
+          </Text>
+          {lv.n >= 1 && <Button key="compact" label="Compact" onPress={() => compact($)} />}
+          <Button key="optimize" label={vague ? '✨ Optimize prompt (short draft)' : '✨ Optimize prompt'} onPress={() => optimizePrompt($)} />
+          {undo !== '' && <Button key="undo" label="Undo" onPress={() => undoOptimize($)} />}
+          <Button key="details" label="Details" onPress={() => $.ui.open({ id: PANE, title: 'Session pilot', focus: true })} />
+          <Button key="hide" label="Hide" onPress={() => savePrefs($, { ...p, band: 'off' })} />
+        </Box>
+        {(five || week) && (
+          <Text dimColor>
+            {five ? `5h limit ${Math.round(five.percentUsed)}%${untilReset(five.resetsAt, now)}` : ''}
+            {five && week ? ' · ' : ''}
+            {week ? `weekly limit ${Math.round(week.percentUsed)}%${untilReset(week.resetsAt, now)}` : ''}
+          </Text>
+        )}
       </Box>
     )
   })

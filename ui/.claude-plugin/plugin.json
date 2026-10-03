@@ -1,6 +1,6 @@
 {
   "name": "session-pilot-ui",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Live context band above the prompt with a one-click Compact button, plus a /pilot details pane. Companion to session-pilot.",
   "author": { "name": "Vivek" },
   "license": "MIT",
