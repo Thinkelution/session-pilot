@@ -47,7 +47,7 @@
   .step{display:flex;gap:16px;align-items:flex-start}
   .step::before{counter-increment:s;content:counter(s);flex:none;width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;text-align:center;line-height:34px;margin-top:2px}
   .step > div{flex:1;min-width:0}
-  .step b{display:block;margin-bottom:6px}
+  .step > div > b:first-child{display:block;margin-bottom:6px}
   .copy{display:flex;gap:8px;align-items:stretch;margin:6px 0}
   .copy code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-family:ui-monospace,Menlo,monospace;font-size:.88rem}
   .copy button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:0 14px;cursor:pointer;font-size:.9rem}
@@ -57,6 +57,9 @@
   .tabs button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:8px 18px;cursor:pointer;font-size:.95rem}
   .tabs button[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:#fff}
   .panel[hidden]{display:none}
+  .demo{margin:0 auto 28px;max-width:720px}
+  .demo video{width:100%;border-radius:14px;border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.08);background:#000}
+  .demo p{text-align:center;margin:8px 0 0}
 
   details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
   summary{cursor:pointer;font-weight:600}
@@ -116,6 +119,10 @@
 
   <h2 id="install">How to add it</h2>
   <p class="sub">You need Claude Code (the terminal app or the Code tab in the Claude desktop app). Pick whichever way feels easier. No programming needed.</p>
+  <div class="demo" id="demo" hidden>
+    <video controls muted playsinline preload="metadata" aria-label="Short video showing how to install session-pilot"><source src="install-demo.mp4" type="video/mp4"></video>
+    <p class="small">Watch: installing session-pilot in under 2 minutes</p>
+  </div>
   <div class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-p="p1">Inside Claude (easiest)</button>
     <button role="tab" aria-selected="false" data-p="p2">Copy and paste</button>
@@ -205,6 +212,9 @@
   <footer>session-pilot v0.3.1 · strip v0.4.4 · MIT · <a href="https://github.com/Thinkelution/session-pilot">GitHub</a></footer>
 </main>
 <script>
+  (function(){var v=document.querySelector('#demo video'),d=document.getElementById('demo');
+    v.addEventListener('loadedmetadata',function(){d.hidden=false});
+    v.querySelector('source').addEventListener('error',function(){d.hidden=true});})();
   document.querySelectorAll('.copy button').forEach(function(b){
     b.addEventListener('click',function(){
       var t=document.getElementById(b.dataset.c).textContent;
