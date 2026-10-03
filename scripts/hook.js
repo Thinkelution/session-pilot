@@ -1,5 +1,6 @@
 'use strict';
 // Single dispatcher for all hook events. Never blocks the session: every path fails open.
+// Alerts go to the user directly (systemMessage); Claude only gets a short "already shown" note.
 const fs = require('fs');
 const L = require('./lib');
 
@@ -8,35 +9,51 @@ let input = {};
 try { input = JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch (_) {}
 
 const policy = L.loadPolicy();
+const snoozed = !!L.snoozedUntil();
 
-function emit(additionalContext) {
-  if (!additionalContext) return;
-  process.stdout.write(JSON.stringify({
-    hookSpecificOutput: { hookEventName: event, additionalContext },
-  }));
+function emit({ user, claude }) {
+  if (!user && !claude) return;
+  const out = {};
+  if (user) out.systemMessage = user;
+  if (claude) out.hookSpecificOutput = { hookEventName: event, additionalContext: claude };
+  process.stdout.write(JSON.stringify(out));
 }
 
-function levelFor(pct) {
-  if (pct >= policy.criticalAt) return 'critical';
-  if (pct >= policy.compactAt) return 'compact';
-  if (pct >= policy.warnAt) return 'warn';
-  return null;
-}
+const SHOWN = '[session-pilot] The user has already been shown this alert directly. Do not repeat it.';
 
-const ADVICE = {
-  warn: p => `[session-pilot] Context is ${p}% full. Mention this briefly to the user; suggest keeping tool output tight and avoiding re-reading files. No action needed yet.`,
-  compact: p => `[session-pilot] Context is ${p}% full. Tell the user in one line that it is a good time to run /compact (or start a fresh session if the task is changing). A handoff has been saved automatically.`,
-  critical: p => `[session-pilot] Context is ${p}% full — auto-compaction is imminent. Tell the user now: run /compact, or finish the current step and start a fresh session. Avoid reading large files.`,
-};
+function userAlert(level, pct, turns) {
+  const left = turns != null ? ` (~${turns} turns left)` : '';
+  if (level === 'warn') return `🟡 Context is ${pct}% full${left}. Nothing to do yet; keep tool output tight.`;
+  if (level === 'compact') return `🟠 Context is ${pct}% full${left}. Good time to compact:\n   ${L.COMPACT_HINT}\n   (handoff saved automatically)`;
+  return `🔴 Context is ${pct}% full${left}. Compact now:\n   ${L.COMPACT_HINT}\n   or finish this step and start fresh. Handoff saved; it will be offered next session.`;
+}
 
 function onSessionStart() {
+  L.syncBin();
+  // Seed the mode from the plugin's userConfig on first run only; /session-pilot:mode owns it afterwards.
+  if (!fs.existsSync(L.MODE_FILE)) {
+    const m = (process.env.CLAUDE_PLUGIN_OPTION_MODE || 'balanced').toLowerCase();
+    L.writeJson(L.MODE_FILE, { mode: L.PRESETS[m] ? m : 'balanced' });
+  }
+  const user = [];
+  let claude = null;
+
+  const welcomed = `${L.STATE_DIR}/welcomed`;
+  if (!fs.existsSync(welcomed)) {
+    fs.writeFileSync(welcomed, new Date().toISOString());
+    user.push(`✈ session-pilot is active (${L.getMode()} mode). Run /session-pilot:setup to add the status line, or /session-pilot:status anytime.`);
+  }
+
   const file = L.handoffFile(input.cwd);
-  let st;
-  try { st = fs.statSync(file); } catch (_) { return; }
-  const ageH = (Date.now() - st.mtimeMs) / 36e5;
-  if (ageH > policy.handoffMaxAgeHours) return;
-  const body = fs.readFileSync(file, 'utf8').slice(0, 2500);
-  emit(`[session-pilot] Handoff from the previous session in this folder (${ageH.toFixed(1)}h ago). Use it as orientation only; confirm with the user before relying on it.\n\n${body}`);
+  try {
+    const st = fs.statSync(file);
+    const ageH = (Date.now() - st.mtimeMs) / 36e5;
+    if (ageH <= policy.handoffMaxAgeHours) {
+      user.push(`📎 Handoff from your last session here (${ageH.toFixed(1)}h ago) was given to Claude as orientation.`);
+      claude = `[session-pilot] Handoff from the previous session in this folder (${ageH.toFixed(1)}h ago). Use it as orientation only; confirm with the user before relying on it.\n\n${fs.readFileSync(file, 'utf8').slice(0, 2500)}`;
+    }
+  } catch (_) {}
+  emit({ user: user.join('\n'), claude });
 }
 
 function onUserPromptSubmit() {
@@ -44,40 +61,46 @@ function onUserPromptSubmit() {
   const c = L.contextStats(entries, policy);
   if (!c) return;
   const { state, save } = L.sessionState(input.session_id);
-  const notes = [];
   const pct = Math.round(c.pct * 100);
+  const turns = L.runwayTurns(entries, c, policy);
+  const a = L.assess(c.pct, policy);
+  const user = [];
 
-  const lvl = levelFor(c.pct);
-  if (lvl && !state.advised[lvl]) {
-    state.advised[lvl] = true;
-    if (lvl !== 'warn') L.writeHandoff(input.cwd, input.session_id, entries, policy);
-    notes.push(ADVICE[lvl](pct));
-  }
-  // Reset advice after the context shrinks (compaction happened).
-  if (!lvl) state.advised = {};
+  L.writeJson(L.liveFile(input.session_id), { ts: Date.now(), pct, tokens: c.tokens, window: c.window, runway: turns });
 
-  // Prompt cache goes cold after idle time; a big cold context is expensive to resume.
-  if (c.timestamp && c.tokens >= policy.cacheIdleMinContextTokens) {
-    const idleMin = (Date.now() - Date.parse(c.timestamp)) / 6e4;
-    if (idleMin >= policy.cacheIdleMinutes && !state.idleAdvised) {
-      state.idleAdvised = true;
-      notes.push(`[session-pilot] ${Math.round(idleMin)} min idle with ${L.fmt(c.tokens)} tokens of context: the prompt cache has likely expired, so this turn re-reads everything at full price. If the task changed, suggest /compact or a fresh session.`);
+  if (!snoozed) {
+    if (a.level && !state.advised[a.level]) {
+      state.advised[a.level] = true;
+      if (a.level !== 'warn') L.writeHandoff(input.cwd, input.session_id, entries, policy);
+      user.push(userAlert(a.level, pct, turns));
     }
-  } else {
-    state.idleAdvised = false;
+    // Reset advice after the context shrinks (compaction happened).
+    if (!a.level) state.advised = {};
+
+    // Prompt cache goes cold after idle time; a big cold context is expensive to resume.
+    if (c.timestamp && c.tokens >= policy.cacheIdleMinContextTokens) {
+      const idleMin = (Date.now() - Date.parse(c.timestamp)) / 6e4;
+      if (idleMin >= policy.cacheIdleMinutes && !state.idleAdvised) {
+        state.idleAdvised = true;
+        user.push(`⏳ ${Math.round(idleMin)} min idle with ${L.fmt(c.tokens)} tokens of context. The cache has likely expired, so this turn re-reads everything at full price. If the task changed, compact or start fresh.`);
+      }
+    } else {
+      state.idleAdvised = false;
+    }
   }
   save();
-  emit(notes.join('\n'));
+  if (user.length) emit({ user: user.join('\n'), claude: SHOWN });
 }
 
 function onPostToolUse() {
+  if (snoozed) return;
   const { state, save } = L.sessionState(input.session_id);
-  const notes = [];
+  const user = [];
   const ti = input.tool_input || {};
   if (input.tool_name === 'Read' && ti.file_path) {
     state.reads[ti.file_path] = (state.reads[ti.file_path] || 0) + 1;
     if (state.reads[ti.file_path] === policy.dupReadWarn) {
-      notes.push(`[session-pilot] ${ti.file_path} has now been read ${policy.dupReadWarn} times this session. Rely on earlier reads or use offset/limit instead of re-reading it in full.`);
+      user.push(`♻ ${ti.file_path} has been read ${policy.dupReadWarn} times this session. Claude was told to reuse the earlier read.`);
     }
   }
   if ((input.tool_name === 'Edit' || input.tool_name === 'Write') && ti.file_path) {
@@ -88,11 +111,13 @@ function onPostToolUse() {
   if (size > policy.bigOutputChars) {
     state.bigOutputs++;
     if (state.bigOutputs === 1 || state.bigOutputs % 5 === 0) {
-      notes.push(`[session-pilot] ${input.tool_name} returned about ${L.fmt(size)} characters. Prefer narrower queries (grep/head/limit/filters) and delegate broad exploration to a subagent so it does not fill this context.`);
+      user.push(`📦 ${input.tool_name} returned ~${L.fmt(size)} characters, which eats context fast. Claude was told to narrow queries and use subagents for broad searches.`);
     }
   }
   save();
-  emit(notes.join('\n'));
+  if (user.length) {
+    emit({ user: user.join('\n'), claude: '[session-pilot] Context waste detected (repeat read or very large output). Reuse earlier reads, use offset/limit, narrow searches, and delegate broad exploration to a subagent. Do not mention this note to the user; they already saw it.' });
+  }
 }
 
 function onPreCompact() {
@@ -105,6 +130,10 @@ function onStop() {
   const c = L.contextStats(entries, policy);
   if (!c) return;
   const t = L.totals(entries);
+  L.writeJson(L.liveFile(input.session_id), {
+    ts: Date.now(), pct: Math.round(c.pct * 100), tokens: c.tokens, window: c.window,
+    runway: L.runwayTurns(entries, c, policy),
+  });
   L.logMetric({
     ts: new Date().toISOString(), session: input.session_id, cwd: input.cwd,
     model: c.model, ctxTokens: c.tokens, ctxPct: +c.pct.toFixed(3), ...t,
@@ -116,5 +145,5 @@ const handlers = {
   PostToolUse: onPostToolUse, PreCompact: onPreCompact, Stop: onStop,
 };
 
-try { if (handlers[event]) handlers[event](); } catch (_) { /* fail open */ }
+try { L.heartbeat(event); if (handlers[event]) handlers[event](); } catch (_) { /* fail open */ }
 process.exit(0);

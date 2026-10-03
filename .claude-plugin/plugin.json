@@ -1,7 +1,18 @@
 {
   "name": "session-pilot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Closed-loop session optimizer for Claude Code and Cowork: monitors context, flags waste, writes handoffs, and nudges compaction on your behalf.",
   "author": { "name": "Vivek" },
-  "keywords": ["context", "tokens", "optimizer", "compaction", "usage"]
+  "homepage": "https://thinkelution.github.io/session-pilot/",
+  "repository": "https://github.com/Thinkelution/session-pilot",
+  "license": "MIT",
+  "keywords": ["context", "tokens", "optimizer", "compaction", "usage"],
+  "userConfig": {
+    "mode": {
+      "type": "string",
+      "title": "Alert mode",
+      "description": "How chatty session-pilot is: quiet, balanced or proactive. You can change it later with /session-pilot:mode.",
+      "default": "balanced"
+    }
+  }
 }

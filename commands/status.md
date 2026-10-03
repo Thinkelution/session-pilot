@@ -1,8 +1,8 @@
 ---
-description: Show context health, cache hit rate and waste signals for this session
+description: One-glance session health with a single recommended next step
 allowed-tools: Bash(node:*)
 ---
 
 !`node "${CLAUDE_PLUGIN_ROOT}/scripts/report.js" status`
 
-Summarize the output above in two or three lines and give one concrete recommendation (continue, compact with a focus, or start fresh).
+Print the output above exactly as written inside a code block. Add nothing else unless the user asks a follow-up.

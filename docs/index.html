@@ -4,55 +4,108 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>session-pilot</title>
-<meta name="description" content="Closed-loop session optimizer for Claude Code and Cowork.">
+<meta name="description" content="Closed-loop session optimizer for Claude Code and Cowork. Two-step install, plain-language alerts, one recommended next step.">
 <style>
-  :root{--bg:#fbfaf8;--fg:#1d1b19;--mut:#6b655f;--card:#fff;--line:#e6e2dc;--acc:#c4572f}
-  @media (prefers-color-scheme:dark){:root{--bg:#171513;--fg:#f1ede8;--mut:#a39c94;--card:#211e1b;--line:#33302b;--acc:#e8825a}}
+  :root{--bg:#fbfaf8;--fg:#1d1b19;--mut:#6b655f;--card:#fff;--line:#e6e2dc;--acc:#c4572f;--term:#1a1816;--termfg:#e9e4dd}
+  @media (prefers-color-scheme:dark){:root{--bg:#171513;--fg:#f1ede8;--mut:#a39c94;--card:#211e1b;--line:#33302b;--acc:#e8825a;--term:#0f0e0d}}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}
-  main{max-width:760px;margin:0 auto;padding:56px 16px 80px}
+  main{max-width:780px;margin:0 auto;padding:56px 16px 80px}
   h1{font-size:2.4rem;margin:0 0 8px;letter-spacing:-.02em}
   .lead{color:var(--mut);font-size:1.15rem;margin:0 0 28px}
   a{color:var(--acc)}
   .btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--acc);color:#fff;text-decoration:none;font-weight:600}
-  h2{margin:44px 0 12px;font-size:1.25rem}
+  h2{margin:48px 0 12px;font-size:1.25rem}
+  p.sub{color:var(--mut);margin:0 0 14px}
   .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
   .card b{display:block;margin-bottom:4px}
   .card span{color:var(--mut);font-size:.93rem}
-  pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.88rem}
-  code{font-family:ui-monospace,Menlo,monospace}
+  pre,.term{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.88rem;margin:0 0 12px}
+  .term{background:var(--term);color:var(--termfg);border-color:transparent;font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap;line-height:1.7}
+  .term .dim{opacity:.55}
+  .step{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
+  .step i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-style:normal;font-weight:700;text-align:center;line-height:28px;margin-top:2px}
+  .step div{flex:1;min-width:0}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.9em}
+  table{width:100%;border-collapse:collapse;font-size:.93rem}
+  td,th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600}
   footer{margin-top:48px;color:var(--mut);font-size:.9rem}
 </style>
 </head>
 <body>
 <main>
   <h1>session-pilot</h1>
-  <p class="lead">A closed-loop session optimizer for Claude Code and Cowork. It watches your context, flags waste, writes handoffs, and nudges you to compact before quality or cost suffers.</p>
+  <p class="lead">A closed-loop session optimizer for Claude Code and Cowork. It watches your context, tells you in plain language when to act, and hands you the exact command to run.</p>
   <a class="btn" href="https://github.com/Thinkelution/session-pilot">View on GitHub</a>
+
+  <h2>Install in two steps</h2>
+  <div class="step"><i>1</i><div>Add the marketplace and install the plugin:
+<pre><code>claude plugin marketplace add Thinkelution/session-pilot
+claude plugin install session-pilot@thinkelution</code></pre></div></div>
+  <div class="step"><i>2</i><div>Start a session and run the guided setup. It asks before changing anything, keeps any status line you already have, and can be undone:
+<pre><code>/session-pilot:setup</code></pre></div></div>
+
+  <h2>What you'll see</h2>
+  <p class="sub">A status line that always answers "am I okay?", and alerts that tell you what to do instead of just reporting numbers.</p>
+<div class="term"><span class="dim">Status line</span>
+🟢 31%
+🟡 62% · ~9 turns left · 5h 41%
+🟠 76% · ~3 turns left · /compact soon
+🔴 90% · /compact now
+
+<span class="dim">Alert, shown directly to you</span>
+🟠 Context is 76% full (~3 turns left). Good time to compact:
+   /compact keep: decisions made, open TODOs, file paths, failing tests
+   (handoff saved automatically)</div>
+
+  <h2>One command for the full picture</h2>
+<div class="term">/session-pilot:status
+
+🟠 Compact soon — 72% of context used (144k / 200k)
+Runway: about 4 more turns before it gets critical
+Cache: 96% of input was served from cache (good)
+Waste: 0 file(s) re-read often · 0 oversized tool output(s)
+Mode: balanced · Snooze: off · Status line: on
+
+Next step: Compact when this step is done:  /compact keep: …</div>
 
   <h2>What it does</h2>
   <div class="grid">
-    <div class="card"><b>Context monitor</b><span>Reads real token usage and advises at 60%, 75% and 88% full.</span></div>
-    <div class="card"><b>Auto handoff</b><span>Saved before compaction and offered at the next session start.</span></div>
-    <div class="card"><b>Waste detector</b><span>Flags repeated file reads and oversized tool output.</span></div>
+    <div class="card"><b>Context monitor</b><span>Traffic-light status with a turns-left estimate based on how fast your context is growing.</span></div>
+    <div class="card"><b>Auto handoff</b><span>Saved before compaction and offered to Claude at the next session start in that folder.</span></div>
+    <div class="card"><b>Waste detector</b><span>Flags repeated file reads and oversized tool output as they happen.</span></div>
     <div class="card"><b>Cache-idle warning</b><span>Warns when a big context has gone cold and will cost full price to resume.</span></div>
-    <div class="card"><b>Status line</b><span>Model, context bar and token count at a glance.</span></div>
-    <div class="card"><b>History</b><span>Per-session peak context and output volume.</span></div>
+    <div class="card"><b>Direct alerts</b><span>Shown to you, not routed through the model, so they are consistent and never repeated by Claude.</span></div>
+    <div class="card"><b>Safe by design</b><span>Hooks only advise and fail open. Setup makes a backup and is fully reversible.</span></div>
   </div>
 
-  <h2>Install</h2>
-<pre><code>git clone https://github.com/Thinkelution/session-pilot
-claude --plugin-dir ./session-pilot</code></pre>
+  <h2>You choose how chatty it is</h2>
+  <table>
+    <tr><th>Mode</th><th>Alerts at</th><th>Extras</th></tr>
+    <tr><td><code>quiet</code></td><td>80% and 90%</td><td>No waste or idle notes</td></tr>
+    <tr><td><code>balanced</code> (default)</td><td>60%, 75%, 88%</td><td>Waste and idle notes</td></tr>
+    <tr><td><code>proactive</code></td><td>50%, 65%, 80%</td><td>Stricter waste detection</td></tr>
+  </table>
+  <p class="sub" style="margin-top:12px">Switch with <code>/session-pilot:mode quiet</code>. Pause everything for a while with <code>/session-pilot:snooze 1h</code>.</p>
 
-  <h2>Status line</h2>
-<pre><code>{ "statusLine": { "type": "command",
-  "command": "node /path/to/session-pilot/scripts/statusline.js" } }</code></pre>
+  <h2>Commands</h2>
+  <table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>/session-pilot:status</code></td><td>Health, runway, waste and one next step</td></tr>
+    <tr><td><code>/session-pilot:setup</code></td><td>Guided status line setup (<code>undo</code> to revert)</td></tr>
+    <tr><td><code>/session-pilot:mode</code></td><td>quiet, balanced or proactive</td></tr>
+    <tr><td><code>/session-pilot:snooze</code></td><td>Pause alerts: 30m, 1h, 4h, off</td></tr>
+    <tr><td><code>/session-pilot:handoff</code></td><td>Write a handoff for the next session</td></tr>
+    <tr><td><code>/session-pilot:history</code></td><td>Recent sessions, peak context and output</td></tr>
+    <tr><td><code>/session-pilot:doctor</code></td><td>Checks the install and tells you how to fix problems</td></tr>
+  </table>
 
   <h2>Limits</h2>
-  <p>Hooks only add advisory context and never block. They cannot rewrite prompts or run <code>/compact</code> for you. Zero dependencies; Node 18+.</p>
+  <p>Hooks add advice and show messages; they cannot rewrite your prompts or run <code>/compact</code> for you, so session-pilot recommends and you decide. Zero dependencies; Node 18+. Cowork support depends on its plugin and hook support and is untested.</p>
 
-  <footer>session-pilot v0.1.0 · MIT</footer>
+  <footer>session-pilot v0.2.0 · MIT</footer>
 </main>
 </body>
 </html>

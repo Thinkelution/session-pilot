@@ -20,11 +20,31 @@ function writeJson(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-// Policy = bundled defaults < user overrides (~/.claude/session-pilot/policy.json).
+const PRESETS = {
+  quiet: { warnAt: 2, compactAt: 0.8, criticalAt: 0.9, dupReadWarn: 0, bigOutputChars: 1e9, cacheIdleMinutes: 1e9 },
+  balanced: {},
+  proactive: { warnAt: 0.5, compactAt: 0.65, criticalAt: 0.8, dupReadWarn: 2, bigOutputChars: 10000, cacheIdleMinutes: 30 },
+};
+const MODE_FILE = path.join(STATE_DIR, 'mode.json');
+const SNOOZE_FILE = path.join(STATE_DIR, 'snooze.json');
+const COMPACT_HINT = '/compact keep: decisions made, open TODOs, file paths, failing tests';
+
+function getMode() {
+  const m = readJson(MODE_FILE, {}).mode;
+  return PRESETS[m] ? m : 'balanced';
+}
+
+// Policy = bundled defaults < mode preset < user overrides (~/.claude/session-pilot/policy.json).
 function loadPolicy() {
   const defaults = readJson(path.join(PLUGIN_ROOT, 'config', 'default-policy.json'), {});
   const user = readJson(path.join(STATE_DIR, 'policy.json'), {});
-  return Object.assign({}, defaults, user);
+  const mode = getMode();
+  return Object.assign({}, defaults, PRESETS[mode], user, { mode });
+}
+
+function snoozedUntil() {
+  const u = readJson(SNOOZE_FILE, {}).until || 0;
+  return u > Date.now() ? u : 0;
 }
 
 function readTranscript(file) {
@@ -167,9 +187,62 @@ function latestTranscript(cwd) {
   return best && best.p;
 }
 
+// Context size after each main-thread assistant turn, oldest first.
+function ctxSeries(entries) {
+  const out = [];
+  for (const e of entries) {
+    if (e.type === 'assistant' && !e.isSidechain && e.message && e.message.usage) {
+      const u = e.message.usage;
+      out.push((u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0));
+    }
+  }
+  return out;
+}
+
+// Turns left before context reaches the critical threshold, from recent growth per turn.
+function runwayTurns(entries, c, policy) {
+  if (!c) return null;
+  const s = ctxSeries(entries).slice(-9);
+  const growth = [];
+  for (let i = 1; i < s.length; i++) if (s[i] > s[i - 1]) growth.push(s[i] - s[i - 1]);
+  if (!growth.length) return null;
+  const avg = growth.reduce((a, b) => a + b, 0) / growth.length;
+  if (avg < 200) return null;
+  return Math.max(0, Math.round((policy.criticalAt * c.window - c.tokens) / avg));
+}
+
+function assess(pct, policy) {
+  if (pct >= policy.criticalAt) return { emoji: '🔴', label: 'Act now', level: 'critical' };
+  if (pct >= policy.compactAt) return { emoji: '🟠', label: 'Compact soon', level: 'compact' };
+  if (pct >= policy.warnAt) return { emoji: '🟡', label: 'Filling up', level: 'warn' };
+  return { emoji: '🟢', label: 'Healthy', level: null };
+}
+
+function heartbeat(event) {
+  const f = path.join(STATE_DIR, 'heartbeat.json');
+  const h = readJson(f, {});
+  h[event] = Date.now();
+  writeJson(f, h);
+}
+
+function liveFile(id) { return path.join(STATE_DIR, 'live', `${id || 'unknown'}.json`); }
+
+// Keep a stable copy of the status-line code outside the versioned plugin cache,
+// so the configured status line survives plugin updates.
+function syncBin() {
+  const dest = path.join(STATE_DIR, 'bin');
+  ensureDir(path.join(dest, 'scripts')); ensureDir(path.join(dest, 'config'));
+  for (const f of ['lib.js', 'statusline.js']) {
+    fs.copyFileSync(path.join(__dirname, f), path.join(dest, 'scripts', f));
+  }
+  fs.copyFileSync(path.join(PLUGIN_ROOT, 'config', 'default-policy.json'), path.join(dest, 'config', 'default-policy.json'));
+  return path.join(dest, 'scripts', 'statusline.js');
+}
+
 const fmt = n => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : String(n));
 
 module.exports = {
-  STATE_DIR, loadPolicy, readTranscript, contextStats, totals, summarize,
+  STATE_DIR, PRESETS, MODE_FILE, SNOOZE_FILE, COMPACT_HINT, getMode, snoozedUntil, ctxSeries, runwayTurns,
+  assess, heartbeat, liveFile, syncBin, ensureDir, writeJson, loadPolicy, readTranscript, contextStats, totals, summarize,
   sessionState, handoffFile, writeHandoff, logMetric, latestTranscript, readJson, fmt,
 };

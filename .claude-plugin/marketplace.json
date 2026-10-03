@@ -1,0 +1,12 @@
+{
+  "name": "thinkelution",
+  "description": "Tools from Thinkelution",
+  "owner": { "name": "Vivek" },
+  "plugins": [
+    {
+      "name": "session-pilot",
+      "source": "./",
+      "description": "Closed-loop session optimizer: context alerts, handoffs, waste detection and a status line."
+    }
+  ]
+}
