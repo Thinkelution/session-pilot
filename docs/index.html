@@ -135,8 +135,8 @@
       <div class="step"><div><b>Type <code>/plugin</code> and press Enter</b>
         A plugin menu opens. Choose <b>Marketplaces</b>, then <b>Add marketplace</b>, and paste this:
         <div class="copy"><code id="m1">Thinkelution/session-pilot</code><button data-c="m1">Copy</button></div></div></div>
-      <div class="step"><div><b>Install the two parts</b>
-        Open the new marketplace and install <b>session-pilot</b> (alerts and handoffs) and <b>session-pilot-ui</b> (the strip, Compact button and limits). Restart the chat when asked.</div></div>
+      <div class="step"><div><b>Choose what to install</b>
+        Open the new marketplace and install <b>session-pilot</b> (alerts and handoffs). Also install <b>session-pilot-ui</b> if you want the strip, Compact button and limits. Restart the chat when asked.</div></div>
       <div class="step"><div><b>Say hello</b>
         After Claude's first reply, session-pilot asks three quick questions: when to show the strip, whether to pop up alerts, and how chatty to be. Pick what feels right. Change it any time with <code>/pilot-settings</code>.</div></div>
     </div>
@@ -146,14 +146,18 @@
     <div class="steps">
       <div class="step"><div><b>Open Terminal</b>
         On a Mac: press ⌘ Space, type "Terminal", press Enter.</div></div>
-      <div class="step"><div><b>Paste these three lines, one at a time</b>
+      <div class="step"><div><b>Paste these lines, one at a time</b>
         <div class="copy"><code id="c1">claude plugin marketplace add Thinkelution/session-pilot</code><button data-c="c1">Copy</button></div>
         <div class="copy"><code id="c2">claude plugin install session-pilot@thinkelution</code><button data-c="c2">Copy</button></div>
         <div class="copy"><code id="c3">claude plugin install session-pilot-ui@thinkelution</code><button data-c="c3">Copy</button></div>
-        <span class="small">The last line adds the strip above your prompt. It is separate because it runs inside Claude Code, so you choose.</span></div></div>
+        <span class="small">The first two lines are enough for alerts and handoffs. The last line is optional: it adds the strip above your prompt, and is separate because it runs inside Claude Code, so you choose.</span></div></div>
       <div class="step"><div><b>Start a new chat and say hello</b>
         session-pilot asks its three quick questions after the first reply.</div></div>
     </div>
+  </div>
+  <div class="grid" style="margin-top:18px">
+    <div class="card"><b>Which one do I need?</b><span class="t"><b>Both</b> is the full experience (recommended). <b>session-pilot</b> alone gives alerts, handoffs and the commands. <b>session-pilot-ui</b> alone gives just the strip, buttons and limits.</span></div>
+    <div class="card"><b>Where each works</b><span class="t">session-pilot: Terminal, desktop Code tab and cloud sessions. session-pilot-ui: Terminal and desktop Code tab only.</span></div>
   </div>
   <div class="note"><b>Prefer a status line at the bottom of the Terminal too?</b> Type <code>/session-pilot:setup</code>. It asks first, keeps any status line you already have, and can be undone. <b>Not sure it worked?</b> Type <code>/session-pilot:doctor</code>.</div>
 
