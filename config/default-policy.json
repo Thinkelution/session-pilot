@@ -1,0 +1,13 @@
+{
+  "windowTokens": 200000,
+  "warnAt": 0.6,
+  "compactAt": 0.75,
+  "criticalAt": 0.88,
+  "bigOutputChars": 20000,
+  "dupReadWarn": 3,
+  "cacheIdleMinutes": 55,
+  "cacheIdleMinContextTokens": 60000,
+  "handoffMaxAgeHours": 24,
+  "handoffPrompts": 5,
+  "pricingPerMTok": null
+}

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>session-pilot</title>
+<meta name="description" content="Closed-loop session optimizer for Claude Code and Cowork.">
+<style>
+  :root{--bg:#fbfaf8;--fg:#1d1b19;--mut:#6b655f;--card:#fff;--line:#e6e2dc;--acc:#c4572f}
+  @media (prefers-color-scheme:dark){:root{--bg:#171513;--fg:#f1ede8;--mut:#a39c94;--card:#211e1b;--line:#33302b;--acc:#e8825a}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}
+  main{max-width:760px;margin:0 auto;padding:56px 16px 80px}
+  h1{font-size:2.4rem;margin:0 0 8px;letter-spacing:-.02em}
+  .lead{color:var(--mut);font-size:1.15rem;margin:0 0 28px}
+  a{color:var(--acc)}
+  .btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--acc);color:#fff;text-decoration:none;font-weight:600}
+  h2{margin:44px 0 12px;font-size:1.25rem}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .card b{display:block;margin-bottom:4px}
+  .card span{color:var(--mut);font-size:.93rem}
+  pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.88rem}
+  code{font-family:ui-monospace,Menlo,monospace}
+  footer{margin-top:48px;color:var(--mut);font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>session-pilot</h1>
+  <p class="lead">A closed-loop session optimizer for Claude Code and Cowork. It watches your context, flags waste, writes handoffs, and nudges you to compact before quality or cost suffers.</p>
+  <a class="btn" href="https://github.com/Thinkelution/session-pilot">View on GitHub</a>
+
+  <h2>What it does</h2>
+  <div class="grid">
+    <div class="card"><b>Context monitor</b><span>Reads real token usage and advises at 60%, 75% and 88% full.</span></div>
+    <div class="card"><b>Auto handoff</b><span>Saved before compaction and offered at the next session start.</span></div>
+    <div class="card"><b>Waste detector</b><span>Flags repeated file reads and oversized tool output.</span></div>
+    <div class="card"><b>Cache-idle warning</b><span>Warns when a big context has gone cold and will cost full price to resume.</span></div>
+    <div class="card"><b>Status line</b><span>Model, context bar and token count at a glance.</span></div>
+    <div class="card"><b>History</b><span>Per-session peak context and output volume.</span></div>
+  </div>
+
+  <h2>Install</h2>
+<pre><code>git clone https://github.com/Thinkelution/session-pilot
+claude --plugin-dir ./session-pilot</code></pre>
+
+  <h2>Status line</h2>
+<pre><code>{ "statusLine": { "type": "command",
+  "command": "node /path/to/session-pilot/scripts/statusline.js" } }</code></pre>
+
+  <h2>Limits</h2>
+  <p>Hooks only add advisory context and never block. They cannot rewrite prompts or run <code>/compact</code> for you. Zero dependencies; Node 18+.</p>
+
+  <footer>session-pilot v0.1.0 · MIT</footer>
+</main>
+</body>
+</html>

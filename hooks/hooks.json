@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.js\" SessionStart", "timeout": 10 }] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.js\" UserPromptSubmit", "timeout": 10 }] }
+    ],
+    "PostToolUse": [
+      { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.js\" PostToolUse", "timeout": 10 }] }
+    ],
+    "PreCompact": [
+      { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.js\" PreCompact", "timeout": 15 }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.js\" Stop", "timeout": 10 }] }
+    ]
+  }
+}
