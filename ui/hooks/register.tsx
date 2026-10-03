@@ -1,11 +1,13 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import type { Sample } from '../types'
+import type { Prefs, Sample } from '../types'
 
 const PANE = 'pilot'
 const history = atom({ plugin: 'session-pilot-ui', key: 'history' } as const, [])
-const isHidden = atom({ plugin: 'session-pilot-ui', key: 'isHidden' } as const, false)
+const DEFAULTS: Prefs = { asked: false, band: 'always', toast: true }
+const prefs = atom({ plugin: 'session-pilot-ui', key: 'prefs' } as const, DEFAULTS)
+const STORE_KEY = 'session-pilot-ui:prefs'
 
 const WARN = 60
 const COMPACT = 75
@@ -56,9 +58,37 @@ async function compact($: any) {
   return r
 }
 
+async function savePrefs($: any, next: Prefs) {
+  await update($, prefs, () => next)
+  await $.store.set(STORE_KEY, next)
+}
+
+async function loadPrefs($: any) {
+  const saved = (await $.store.get(STORE_KEY)) as Prefs | undefined
+  if (saved && saved.asked) await update($, prefs, () => ({ ...DEFAULTS, ...saved }))
+}
+
+// Asks once (and again on /pilot-settings). A dismissed dialog stores nothing, so it asks again next session.
+async function askPrefs($: any) {
+  try {
+    const b = await $.ui.ask('Show the session-pilot context band above your prompt?', {
+      options: ['Always', 'Only when filling up (60%+)', 'No, hide it'],
+      header: 'Band',
+    })
+    const t = await $.ui.ask('Show a pop-up when context passes 75%?', { options: ['Yes', 'No'], header: 'Alerts' })
+    const band = b === 'Always' ? 'always' : b.startsWith('Only') ? 'warn' : 'off'
+    await savePrefs($, { asked: true, band, toast: t === 'Yes' })
+    $.ui.toast('Saved. Change it any time with /pilot-settings.')
+  } catch (_) {
+    // dismissed: leave unasked
+  }
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'pilot', description: 'Show session-pilot context details in a pane' })
+    await $.command.register({ name: 'pilot-settings', description: 'Choose whether and when the session-pilot band shows' })
+    await loadPrefs($)
     return next(e)
   })
 
@@ -68,25 +98,34 @@ export const register: Register = on => {
     return { text: 'Session pilot pane opened.' }
   })
 
+  on('command.run', { command: 'pilot-settings' }, async $ => {
+    await askPrefs($)
+    return { text: 'Session pilot settings updated.' }
+  })
+
   on('turn.complete', async ($, e, next) => {
+    const ran = await next(e)
     if (!e.agentId) {
       const u = await sample($)
       const pct = u.context.percent
-      // First time a turn crosses each line, a toast; the band shows the rest.
-      if (pct !== undefined && level(pct).n >= 2) {
+      const p = await read($, prefs)
+      if (!p.asked) {
+        await askPrefs($)
+      } else if (p.toast && pct !== undefined && level(pct).n >= 2) {
         $.ui.toast(`${level(pct).emoji} Context ${Math.round(pct)}% full. Use the Compact button above the prompt.`)
       }
     }
-    return next(e)
+    return ran
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const list = await read($, history)
-    const hidden = await read($, isHidden)
-    if (e.props.hasSurvey || hidden || list.length === 0) return next(e)
+    const p = await read($, prefs)
+    if (e.props.hasSurvey || list.length === 0 || !p.asked || p.band === 'off') return next(e)
 
     const last = list[list.length - 1]
     const lv = level(last.pct)
+    if (p.band === 'warn' && lv.n < 1) return next(e)
     const left = runway(list)
     const u = await $.session.usage()
     const five = u.rateLimits.find((r: { kind: string }) => r.kind === 'five_hour')
@@ -106,13 +145,14 @@ export const register: Register = on => {
         </Text>
         {lv.n >= 1 && <Button key="compact" label="Compact" onPress={() => compact($)} />}
         <Button key="details" label="Details" onPress={() => $.ui.open({ id: PANE, title: 'Session pilot', focus: true })} />
-        <Button key="hide" label="Hide" onPress={() => update($, isHidden, () => true)} />
+        <Button key="hide" label="Hide" onPress={() => savePrefs($, { ...p, band: 'off' })} />
       </Box>
     )
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const list = await read($, history)
+    const p = await read($, prefs)
     const { Box, Text, Button } = $.ui.resolve(e)
     if (list.length === 0) {
       return (
@@ -152,7 +192,7 @@ export const register: Register = on => {
         <Box>
           <Button key="compact" label="Compact now" onPress={() => compact($)} />
           <Text> </Text>
-          <Button key="show" label="Show band" onPress={() => update($, isHidden, () => false)} />
+          <Button key="show" label="Show band" onPress={() => savePrefs($, { ...p, asked: true, band: 'always' })} />
         </Box>
         <Text dimColor>Compact keeps: {HINT}</Text>
       </Box>
