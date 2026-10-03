@@ -40,6 +40,30 @@
   <p class="lead">A closed-loop session optimizer for Claude Code and Cowork. It watches your context, tells you in plain language when to act, and hands you the exact command to run.</p>
   <a class="btn" href="https://github.com/Thinkelution/session-pilot">View on GitHub</a>
 
+  <h2>How it helps in Claude Code</h2>
+  <p class="sub">Long sessions fail quietly: the context fills, replies get slower and less accurate, and the usual fix (<code>/compact</code>) comes too late or throws away the wrong things. session-pilot watches this for you.</p>
+  <div class="grid">
+    <div class="card"><b>Never get surprised by a full context</b><span>A traffic-light percentage and a "turns left" estimate, so you compact on your terms instead of mid-task.</span></div>
+    <div class="card"><b>Compact without losing the thread</b><span>One click (or one Enter) runs <code>/compact</code> with a focus on decisions, TODOs, file paths and failing tests. A handoff is saved first.</span></div>
+    <div class="card"><b>Stay inside your plan limits</b><span>Your 5-hour and weekly limits sit next to the context bar, with time until each resets.</span></div>
+    <div class="card"><b>Spend fewer tokens per answer</b><span>Waste notes catch repeated file reads and oversized tool output; <strong>✨ Optimize prompt</strong> turns a vague draft into a clear one before you send it.</span></div>
+    <div class="card"><b>Pick up where you left off</b><span>Handoffs are offered to Claude at the next session start in that folder, so a fresh session does not start cold.</span></div>
+    <div class="card"><b>You stay in control</b><span>It asks before showing anything, only advises, can be snoozed, and setup is fully reversible.</span></div>
+  </div>
+
+  <h2>What you can do with it</h2>
+  <table>
+    <tr><th>You want to…</th><th>Use</th></tr>
+    <tr><td>Know if the session is healthy</td><td>Status line or the band above the prompt</td></tr>
+    <tr><td>Shrink the context safely</td><td><strong>Compact</strong> button, or <code>/compact keep: …</code></td></tr>
+    <tr><td>Improve a rough prompt</td><td><strong>✨ Optimize prompt</strong>, then review, send, or <strong>Undo</strong></td></tr>
+    <tr><td>Watch plan limits</td><td>5h and weekly bars with reset times</td></tr>
+    <tr><td>See how a session grew</td><td><code>/pilot</code> pane or <code>/session-pilot:history</code></td></tr>
+    <tr><td>Resume tomorrow</td><td><code>/session-pilot:handoff</code> (also automatic)</td></tr>
+    <tr><td>Quiet it down</td><td><code>/session-pilot:mode quiet</code>, <code>/session-pilot:snooze 1h</code>, <code>/pilot-settings</code></td></tr>
+    <tr><td>Check something is wrong</td><td><code>/session-pilot:doctor</code></td></tr>
+  </table>
+
   <h2>Install in two steps</h2>
   <div class="step"><i>1</i><div>Add the marketplace and install the plugin:
 <pre><code>claude plugin marketplace add Thinkelution/session-pilot
@@ -82,10 +106,12 @@ Next step: Compact when this step is done:  /compact keep: …</div>
   </div>
 
   <h2>Optional: live UI in Claude Code</h2>
-  <p class="sub">Install the companion mod to get a band above your prompt with a Compact button (one click in the terminal; in the Desktop app it fills the <code>/compact</code> command for you to confirm with Enter), a <strong>✨ Optimize prompt</strong> button that rewrites your draft into a clearer prompt for you to review (with Undo; it sees the assistant's last reply and leaves vague drafts unchanged instead of guessing), your 5-hour and weekly limits with time until reset, and a <code>/pilot</code> pane with per-turn history. Works in the terminal and the Desktop app's Code tab.</p>
+  <p class="sub">Install the companion mod to get a band above your prompt with a Compact button (one click in the terminal; in the Desktop app it fills the <code>/compact</code> command for you to confirm with Enter, because plugins cannot trigger compaction there yet). The band refreshes right after a compaction, a <strong>✨ Optimize prompt</strong> button that rewrites your draft into a clearer prompt for you to review (with Undo; it sees the assistant's last reply and leaves vague drafts unchanged instead of guessing), your 5-hour and weekly limits with time until reset, and a <code>/pilot</code> pane with per-turn history. Works in the terminal and the Desktop app's Code tab.</p>
 <pre><code>claude plugin install session-pilot-ui@thinkelution</code></pre>
+<p class="sub">First run asks three things (show the band always, only when filling up, or never; pop-up alerts; alert mode), remembers your answers, and <code>/pilot-settings</code> changes them. It does not show the Compact button until context reaches 60%.</p>
 <div class="term"><span class="dim">Band above the prompt</span>
-🟡 62% ██████░░░░  124k / 200k · ~9 turns left      [Compact] [✨ Optimize prompt] [Details] [Hide]
+🟡 62% ██████░░░░  124k / 200k · ~9 turns left      [Compact] [✨ Optimize prompt] [≡] [✕]
+
 5h ████░░░░░░ 48%  resets in 2h 10m    Week ███░░░░░░░ 31%  resets in 3d 4h
 
 <span class="dim">/pilot pane</span>
@@ -122,7 +148,7 @@ Recent turns
   <h2>Limits</h2>
   <p>Hooks add advice and show messages; they cannot rewrite your prompts or run <code>/compact</code> for you, so session-pilot recommends and you decide. Zero dependencies; Node 18+. Cowork support depends on its plugin and hook support and is untested.</p>
 
-  <footer>session-pilot v0.3.0 · MIT</footer>
+  <footer>session-pilot v0.3.1 · session-pilot-ui v0.4.4 · MIT</footer>
 </main>
 </body>
 </html>

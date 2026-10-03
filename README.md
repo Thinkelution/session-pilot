@@ -3,6 +3,13 @@
 Closed-loop session optimizer for Claude Code (and Cowork where plugins and hooks are supported). Zero dependencies; Node 18+.
 Site: https://thinkelution.github.io/session-pilot/
 
+## Why use it
+- Know when a session is filling up, with a turns-left estimate, before replies degrade.
+- Compact with focus (decisions, TODOs, file paths, failing tests) and get a handoff saved first.
+- See 5-hour and weekly plan limits next to context, with time until reset.
+- Cut waste: repeated reads, oversized output, vague prompts (✨ Optimize prompt).
+- Resume cleanly: handoffs are offered at the next session start in that folder.
+
 ## Install
 ```bash
 claude plugin marketplace add Thinkelution/session-pilot
@@ -22,7 +29,7 @@ For local development: `claude --plugin-dir /path/to/session-pilot`.
 ```bash
 claude plugin install session-pilot-ui@thinkelution
 ```
-A band above the prompt with the context state, a one-click **Compact** button, a **✨ Optimize prompt** button, and 5-hour/weekly limits with time until reset, plus a `/pilot` details pane. It is a *mod*: code that runs inside Claude Code with your permissions, so it is a separate, optional install. Requires Claude Code v2.1.287+. It does not draw in the VS Code extension, cloud sessions or Cowork/chat; the hook alerts still work there. Details: [ui/README.md](ui/README.md).
+A band above the prompt with the context state, a one-click **Compact** button (in the Desktop app it fills `/compact …` for you to confirm with Enter; the band refreshes after compaction), a **✨ Optimize prompt** button, and 5-hour/weekly limits with time until reset, plus a `/pilot` details pane. It is a *mod*: code that runs inside Claude Code with your permissions, so it is a separate, optional install. Requires Claude Code v2.1.287+. It does not draw in the VS Code extension, cloud sessions or Cowork/chat; the hook alerts still work there. Details: [ui/README.md](ui/README.md).
 
 ## Commands
 | Command | Purpose |

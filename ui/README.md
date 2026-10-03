@@ -8,6 +8,8 @@ Optional companion to session-pilot. A **mod**: code that runs inside Claude Cod
 - **Toast** when a turn ends above 75% (optional).
 - **Asks first:** after your first reply it asks whether to show the band (always, only when filling up, or never) whether to pop up alerts, and the overall alert mode (balanced, quiet or proactive), which it writes to the file the core session-pilot plugin reads. Answers are remembered across sessions; change them any time with `/pilot-settings`. Dismissing the question means it asks again next session.
 
+The band updates right after a compaction (typed or via the button). The Compact button appears from 60% context use.
+
 Works in the terminal and the Desktop app's Code tab. It does not draw in the VS Code extension, cloud sessions, or Cowork/chat workspaces. Requires Claude Code v2.1.287 or later.
 
 ```bash
