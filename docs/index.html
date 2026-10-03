@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>session-pilot: keep long Claude chats on track</title>
 <meta name="description" content="A free add-on for Claude Code that tells you when a chat is getting full, helps you tidy it up in one click, and keeps an eye on your usage limits.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Scope+One&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#fbfaf8;--fg:#1d1b19;--mut:#6b655f;--card:#fff;--line:#e6e2dc;--acc:#c4572f;--accbg:#fbeee8;--g:#2e9e5b;--y:#d9a31a;--o:#e07a2b;--r:#d23f3f;--bar:#e9e5df}
   @media (prefers-color-scheme:dark){:root{--bg:#171513;--fg:#f1ede8;--mut:#a39c94;--card:#211e1b;--line:#33302b;--acc:#e8825a;--accbg:#2b1f1a;--bar:#3a3631}}
@@ -13,6 +16,18 @@
   body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}
   main{max-width:820px;margin:0 auto;padding:0 20px 80px}
   a{color:var(--acc)}
+  :root{--brand:'Scope One',Georgia,'Times New Roman',serif}
+  .top{background:#171513;color:#f1ede8;border-bottom:1px solid #2c2926}
+  .top .in{max-width:820px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand{line-height:1.1}
+  .brand .name{display:block;font-family:var(--brand);font-size:1.7rem;letter-spacing:.01em;-webkit-text-stroke:.9px currentColor;paint-order:stroke fill}
+  .brand .by{display:block;font-family:var(--brand);font-size:.95rem;color:#c9c2b9;margin-top:3px}
+  .brand .by b{color:#e8825a;font-weight:400;-webkit-text-stroke:.4px currentColor}
+  .top nav{padding:0}
+  .top nav a{color:#c9c2b9}
+  .top nav a:hover{color:#e8825a}
+  h1,h2{font-family:var(--brand);font-weight:400;-webkit-text-stroke:1px currentColor;paint-order:stroke fill}
+  h3{font-family:var(--brand);font-weight:400}
   nav{display:flex;gap:18px;justify-content:flex-end;padding:18px 0;font-size:.95rem;flex-wrap:wrap}
   nav a{color:var(--mut);text-decoration:none}
   nav a:hover{color:var(--acc)}
@@ -77,8 +92,12 @@
 </style>
 </head>
 <body>
-<main>
+<header class="top"><div class="in">
+  <div class="brand"><span class="name">Session-pilot</span><span class="by">by <b>Thinkelution</b></span></div>
   <nav><a href="#how">How it helps</a><a href="#install">Install</a><a href="#developers">For developers</a><a href="#faq">Questions</a><a href="https://github.com/Thinkelution/session-pilot">GitHub</a></nav>
+</div></header>
+<main>
+
 
   <section class="hero">
     <h1>Keep your long Claude chats on track</h1>
@@ -213,7 +232,7 @@
   </details>
   <details><summary>The small print</summary><p>Built for Claude Code. The core plugin needs Node 18+ and the strip needs Claude Code 2.1.287+. Alerts can only advise: they cannot rewrite your messages. Open source under the MIT license.</p></details>
 
-  <footer>session-pilot v0.3.1 · strip v0.4.4 · MIT · <a href="https://github.com/Thinkelution/session-pilot">GitHub</a></footer>
+  <footer>Session-pilot by Thinkelution · v0.3.1 · strip v0.4.4 · MIT · <a href="https://github.com/Thinkelution/session-pilot">GitHub</a></footer>
 </main>
 <script>
   (function(){var v=document.querySelector('#demo video'),d=document.getElementById('demo');
