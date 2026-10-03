@@ -17,6 +17,8 @@ claude plugin install session-pilot@thinkelution
 ```
 Then, in a session, run `/session-pilot:setup`. It asks before changing anything, keeps any status line you already have (shown first, then session-pilot after `│`), backs up your settings, and can be reverted with `/session-pilot:setup undo`.
 
+Prefer clicking? In a Claude Code chat type `/plugin`, add the marketplace `Thinkelution/session-pilot`, and install from the menu.
+
 For local development: `claude --plugin-dir /path/to/session-pilot`.
 
 ## What you see

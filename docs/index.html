@@ -3,152 +3,220 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>session-pilot</title>
-<meta name="description" content="Closed-loop session optimizer for Claude Code and Cowork. Two-step install, plain-language alerts, one recommended next step.">
+<title>session-pilot: keep long Claude chats on track</title>
+<meta name="description" content="A free add-on for Claude Code that tells you when a chat is getting full, helps you tidy it up in one click, and keeps an eye on your usage limits.">
 <style>
-  :root{--bg:#fbfaf8;--fg:#1d1b19;--mut:#6b655f;--card:#fff;--line:#e6e2dc;--acc:#c4572f;--term:#1a1816;--termfg:#e9e4dd}
-  @media (prefers-color-scheme:dark){:root{--bg:#171513;--fg:#f1ede8;--mut:#a39c94;--card:#211e1b;--line:#33302b;--acc:#e8825a;--term:#0f0e0d}}
+  :root{--bg:#fbfaf8;--fg:#1d1b19;--mut:#6b655f;--card:#fff;--line:#e6e2dc;--acc:#c4572f;--accbg:#fbeee8;--g:#2e9e5b;--y:#d9a31a;--o:#e07a2b;--r:#d23f3f;--bar:#e9e5df}
+  @media (prefers-color-scheme:dark){:root{--bg:#171513;--fg:#f1ede8;--mut:#a39c94;--card:#211e1b;--line:#33302b;--acc:#e8825a;--accbg:#2b1f1a;--bar:#3a3631}}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}
-  main{max-width:780px;margin:0 auto;padding:56px 16px 80px}
-  h1{font-size:2.4rem;margin:0 0 8px;letter-spacing:-.02em}
-  .lead{color:var(--mut);font-size:1.15rem;margin:0 0 28px}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}
+  main{max-width:820px;margin:0 auto;padding:0 20px 80px}
   a{color:var(--acc)}
-  .btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--acc);color:#fff;text-decoration:none;font-weight:600}
-  h2{margin:48px 0 12px;font-size:1.25rem}
-  p.sub{color:var(--mut);margin:0 0 14px}
-  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  nav{display:flex;gap:18px;justify-content:flex-end;padding:18px 0;font-size:.95rem;flex-wrap:wrap}
+  nav a{color:var(--mut);text-decoration:none}
+  nav a:hover{color:var(--acc)}
+  .hero{text-align:center;padding:36px 0 20px}
+  .hero h1{font-size:clamp(2rem,6vw,3rem);line-height:1.15;margin:0 0 14px;letter-spacing:-.02em}
+  .hero p{color:var(--mut);font-size:1.2rem;max-width:600px;margin:0 auto 26px}
+  .btn{display:inline-block;padding:12px 22px;border-radius:10px;background:var(--acc);color:#fff;text-decoration:none;font-weight:600;border:0;font-size:1rem;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--acc);border:1px solid var(--line);margin-left:8px}
+  h2{margin:64px 0 8px;font-size:1.7rem;letter-spacing:-.01em;text-align:center}
+  h3{margin:28px 0 8px;font-size:1.1rem}
+  .sub{color:var(--mut);text-align:center;max-width:620px;margin:0 auto 26px}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .card .ic{font-size:1.6rem;display:block;margin-bottom:6px}
   .card b{display:block;margin-bottom:4px}
-  .card span{color:var(--mut);font-size:.93rem}
-  pre,.term{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.88rem;margin:0 0 12px}
-  .term{background:var(--term);color:var(--termfg);border-color:transparent;font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap;line-height:1.7}
-  .term .dim{opacity:.55}
-  .step{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
-  .step i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-style:normal;font-weight:700;text-align:center;line-height:28px;margin-top:2px}
-  .step div{flex:1;min-width:0}
-  code{font-family:ui-monospace,Menlo,monospace;font-size:.9em}
-  table{width:100%;border-collapse:collapse;font-size:.93rem}
+  .card span.t{color:var(--mut);font-size:.96rem}
+
+  .mock{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+  .mock .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .mock .row + .row{margin-top:14px}
+  .pct{font-weight:700}
+  .bar{display:inline-block;width:110px;height:10px;border-radius:6px;background:var(--bar);vertical-align:middle;margin:0 8px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:6px}
+  .chip{display:inline-block;padding:6px 12px;border-radius:8px;border:1px solid var(--line);font-size:.9rem;margin-left:6px;background:var(--bg)}
+  .chip.main{background:var(--accbg);border-color:var(--acc);color:var(--acc);font-weight:600}
+  .small{color:var(--mut);font-size:.93rem}
+  .legend{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:14px}
+  .legend div{font-size:.93rem}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px}
+
+  .steps{counter-reset:s;display:grid;gap:18px}
+  .step{display:flex;gap:16px;align-items:flex-start}
+  .step::before{counter-increment:s;content:counter(s);flex:none;width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;text-align:center;line-height:34px;margin-top:2px}
+  .step > div{flex:1;min-width:0}
+  .step b{display:block;margin-bottom:6px}
+  .copy{display:flex;gap:8px;align-items:stretch;margin:6px 0}
+  .copy code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-family:ui-monospace,Menlo,monospace;font-size:.88rem}
+  .copy button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:0 14px;cursor:pointer;font-size:.9rem}
+  .copy button:hover{border-color:var(--acc);color:var(--acc)}
+  .note{background:var(--accbg);border-radius:12px;padding:14px 18px;font-size:.95rem;margin-top:16px}
+  .tabs{display:flex;gap:8px;justify-content:center;margin-bottom:22px;flex-wrap:wrap}
+  .tabs button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:8px 18px;cursor:pointer;font-size:.95rem}
+  .tabs button[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+  .panel[hidden]{display:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
+  summary{cursor:pointer;font-weight:600}
+  details[open] summary{margin-bottom:8px}
+  details p,details li{color:var(--mut);margin:6px 0}
+  table{width:100%;border-collapse:collapse;font-size:.95rem}
   td,th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
   th{color:var(--mut);font-weight:600}
-  footer{margin-top:48px;color:var(--mut);font-size:.9rem}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.9em}
+  ul.tick{list-style:none;padding:0;margin:0}
+  ul.tick li{padding-left:28px;position:relative;margin:10px 0}
+  ul.tick li::before{content:"✓";position:absolute;left:0;color:var(--g);font-weight:700}
+  footer{margin-top:64px;text-align:center;color:var(--mut);font-size:.9rem}
+  @media (max-width:560px){.btn.ghost{margin:10px 0 0}.bar{width:70px}}
 </style>
 </head>
 <body>
 <main>
-  <h1>session-pilot</h1>
-  <p class="lead">A closed-loop session optimizer for Claude Code and Cowork. It watches your context, tells you in plain language when to act, and hands you the exact command to run.</p>
-  <a class="btn" href="https://github.com/Thinkelution/session-pilot">View on GitHub</a>
+  <nav><a href="#how">How it helps</a><a href="#install">Install</a><a href="#developers">For developers</a><a href="#faq">Questions</a><a href="https://github.com/Thinkelution/session-pilot">GitHub</a></nav>
 
-  <h2>How it helps in Claude Code</h2>
-  <p class="sub">Long sessions fail quietly: the context fills, replies get slower and less accurate, and the usual fix (<code>/compact</code>) comes too late or throws away the wrong things. session-pilot watches this for you.</p>
+  <section class="hero">
+    <h1>Keep your long Claude chats on track</h1>
+    <p>Claude gets slower and forgetful when a chat gets too long. session-pilot warns you early, tidies things up in one click, and shows how much of your usage limit is left.</p>
+    <a class="btn" href="#install">Get started in 2 minutes</a><a class="btn ghost" href="#see">See it</a>
+  </section>
+
+  <h2 id="how">What it does for you</h2>
+  <p class="sub">You keep working as usual. session-pilot watches in the background and speaks up only when it matters.</p>
   <div class="grid">
-    <div class="card"><b>Never get surprised by a full context</b><span>A traffic-light percentage and a "turns left" estimate, so you compact on your terms instead of mid-task.</span></div>
-    <div class="card"><b>Compact without losing the thread</b><span>One click (or one Enter) runs <code>/compact</code> with a focus on decisions, TODOs, file paths and failing tests. A handoff is saved first.</span></div>
-    <div class="card"><b>Stay inside your plan limits</b><span>Your 5-hour and weekly limits sit next to the context bar, with time until each resets.</span></div>
-    <div class="card"><b>Spend fewer tokens per answer</b><span>Waste notes catch repeated file reads and oversized tool output; <strong>✨ Optimize prompt</strong> turns a vague draft into a clear one before you send it.</span></div>
-    <div class="card"><b>Pick up where you left off</b><span>Handoffs are offered to Claude at the next session start in that folder, so a fresh session does not start cold.</span></div>
-    <div class="card"><b>You stay in control</b><span>It asks before showing anything, only advises, can be snoozed, and setup is fully reversible.</span></div>
+    <div class="card"><span class="ic">🚦</span><b>Tells you when a chat is filling up</b><span class="t">A simple green, yellow, orange or red light, plus a guess of how many more messages you have left.</span></div>
+    <div class="card"><span class="ic">🧹</span><b>Tidies up in one click</b><span class="t">Shrinks the chat while keeping what matters: decisions, to-dos, file names and failing tests.</span></div>
+    <div class="card"><span class="ic">⏱️</span><b>Shows your usage limits</b><span class="t">Your 5-hour and weekly limits, with how long until each one resets.</span></div>
+    <div class="card"><span class="ic">✨</span><b>Makes your prompts clearer</b><span class="t">Press one button and a vague message becomes a clear one. You review it before sending, and can undo.</span></div>
+    <div class="card"><span class="ic">📝</span><b>Saves your place</b><span class="t">Writes a short summary so tomorrow's chat can pick up where today's stopped.</span></div>
+    <div class="card"><span class="ic">🎛️</span><b>Stays out of your way</b><span class="t">It asks what you want, remembers, and you can quiet it or pause it any time.</span></div>
   </div>
 
-  <h2>What you can do with it</h2>
-  <table>
-    <tr><th>You want to…</th><th>Use</th></tr>
-    <tr><td>Know if the session is healthy</td><td>Status line or the band above the prompt</td></tr>
-    <tr><td>Shrink the context safely</td><td><strong>Compact</strong> button, or <code>/compact keep: …</code></td></tr>
-    <tr><td>Improve a rough prompt</td><td><strong>✨ Optimize prompt</strong>, then review, send, or <strong>Undo</strong></td></tr>
-    <tr><td>Watch plan limits</td><td>5h and weekly bars with reset times</td></tr>
-    <tr><td>See how a session grew</td><td><code>/pilot</code> pane or <code>/session-pilot:history</code></td></tr>
-    <tr><td>Resume tomorrow</td><td><code>/session-pilot:handoff</code> (also automatic)</td></tr>
-    <tr><td>Quiet it down</td><td><code>/session-pilot:mode quiet</code>, <code>/session-pilot:snooze 1h</code>, <code>/pilot-settings</code></td></tr>
-    <tr><td>Check something is wrong</td><td><code>/session-pilot:doctor</code></td></tr>
-  </table>
+  <h2 id="see">What you'll see</h2>
+  <p class="sub">A small strip above the box where you type. It looks like this (example).</p>
+  <div class="mock" aria-label="Example of the strip above the prompt box">
+    <div class="row">
+      <div class="pct">🟡 62% <span class="bar"><i style="width:62%;background:var(--y)"></i></span> <span class="small">about 9 messages left</span></div>
+      <div><span class="chip main">Compact</span><span class="chip">✨ Optimize prompt</span><span class="chip">≡</span><span class="chip">✕</span></div>
+    </div>
+    <div class="row small">
+      <div>5-hour limit <span class="bar"><i style="width:48%;background:var(--g)"></i></span> 48% · resets in 2h 10m</div>
+      <div>Weekly limit <span class="bar"><i style="width:31%;background:var(--g)"></i></span> 31% · resets in 3d 4h</div>
+    </div>
+  </div>
+  <div class="legend">
+    <div><span class="dot" style="background:var(--g)"></span>Green: plenty of room</div>
+    <div><span class="dot" style="background:var(--y)"></span>Yellow: filling up</div>
+    <div><span class="dot" style="background:var(--o)"></span>Orange: tidy up soon</div>
+    <div><span class="dot" style="background:var(--r)"></span>Red: tidy up now</div>
+  </div>
+  <p class="small" style="text-align:center;margin-top:14px"><b>Compact</b> appears once the chat is 60% full. <b>≡</b> opens details, <b>✕</b> hides the strip.</p>
 
-  <h2>Install in two steps</h2>
-  <div class="step"><i>1</i><div>Add the marketplace and install the plugin:
-<pre><code>claude plugin marketplace add Thinkelution/session-pilot
-claude plugin install session-pilot@thinkelution</code></pre></div></div>
-  <div class="step"><i>2</i><div>Start a session and run the guided setup. It asks before changing anything, keeps any status line you already have, and can be undone:
-<pre><code>/session-pilot:setup</code></pre></div></div>
-
-  <h2>What you'll see</h2>
-  <p class="sub">A status line that always answers "am I okay?", and alerts that tell you what to do instead of just reporting numbers.</p>
-<div class="term"><span class="dim">Status line</span>
-🟢 31%
-🟡 62% · ~9 turns left · 5h 41%
-🟠 76% · ~3 turns left · /compact soon
-🔴 90% · /compact now
-
-<span class="dim">Alert, shown directly to you</span>
-🟠 Context is 76% full (~3 turns left). Good time to compact:
-   /compact keep: decisions made, open TODOs, file paths, failing tests
-   (handoff saved automatically)</div>
-
-  <h2>One command for the full picture</h2>
-<div class="term">/session-pilot:status
-
-🟠 Compact soon — 72% of context used (144k / 200k)
-Runway: about 4 more turns before it gets critical
-Cache: 96% of input was served from cache (good)
-Waste: 0 file(s) re-read often · 0 oversized tool output(s)
-Mode: balanced · Snooze: off · Status line: on
-
-Next step: Compact when this step is done:  /compact keep: …</div>
-
-  <h2>What it does</h2>
-  <div class="grid">
-    <div class="card"><b>Context monitor</b><span>Traffic-light status with a turns-left estimate based on how fast your context is growing.</span></div>
-    <div class="card"><b>Auto handoff</b><span>Saved before compaction and offered to Claude at the next session start in that folder.</span></div>
-    <div class="card"><b>Waste detector</b><span>Flags repeated file reads and oversized tool output as they happen.</span></div>
-    <div class="card"><b>Cache-idle warning</b><span>Warns when a big context has gone cold and will cost full price to resume.</span></div>
-    <div class="card"><b>Direct alerts</b><span>Shown to you, not routed through the model, so they are consistent and never repeated by Claude.</span></div>
-    <div class="card"><b>Safe by design</b><span>Hooks only advise and fail open. Setup makes a backup and is fully reversible.</span></div>
+  <h2 id="install">How to add it</h2>
+  <p class="sub">You need Claude Code (the terminal app or the Code tab in the Claude desktop app). Pick whichever way feels easier. No programming needed.</p>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-p="p1">Inside Claude (easiest)</button>
+    <button role="tab" aria-selected="false" data-p="p2">Copy and paste</button>
   </div>
 
-  <h2>Optional: live UI in Claude Code</h2>
-  <p class="sub">Install the companion mod to get a band above your prompt with a Compact button (one click in the terminal; in the Desktop app it fills the <code>/compact</code> command for you to confirm with Enter, because plugins cannot trigger compaction there yet). The band refreshes right after a compaction, a <strong>✨ Optimize prompt</strong> button that rewrites your draft into a clearer prompt for you to review (with Undo; it sees the assistant's last reply and leaves vague drafts unchanged instead of guessing), your 5-hour and weekly limits with time until reset, and a <code>/pilot</code> pane with per-turn history. Works in the terminal and the Desktop app's Code tab.</p>
-<pre><code>claude plugin install session-pilot-ui@thinkelution</code></pre>
-<p class="sub">First run asks three things (show the band always, only when filling up, or never; pop-up alerts; alert mode), remembers your answers, and <code>/pilot-settings</code> changes them. It does not show the Compact button until context reaches 60%.</p>
-<div class="term"><span class="dim">Band above the prompt</span>
-🟡 62% ██████░░░░  124k / 200k · ~9 turns left      [Compact] [✨ Optimize prompt] [≡] [✕]
+  <div class="panel" id="p1">
+    <div class="steps">
+      <div class="step"><div><b>Open a Claude Code chat</b>
+        In the Claude desktop app, open the <b>Code</b> tab and start a chat in any folder. Or open Terminal and type <code>claude</code>.</div></div>
+      <div class="step"><div><b>Type <code>/plugin</code> and press Enter</b>
+        A plugin menu opens. Choose <b>Marketplaces</b>, then <b>Add marketplace</b>, and paste this:
+        <div class="copy"><code id="m1">Thinkelution/session-pilot</code><button data-c="m1">Copy</button></div></div></div>
+      <div class="step"><div><b>Install the two parts</b>
+        Open the new marketplace and install <b>session-pilot</b> (alerts and handoffs) and <b>session-pilot-ui</b> (the strip, Compact button and limits). Restart the chat when asked.</div></div>
+      <div class="step"><div><b>Say hello</b>
+        After Claude's first reply, session-pilot asks three quick questions: when to show the strip, whether to pop up alerts, and how chatty to be. Pick what feels right. Change it any time with <code>/pilot-settings</code>.</div></div>
+    </div>
+  </div>
 
-5h ████░░░░░░ 48%  resets in 2h 10m    Week ███░░░░░░░ 31%  resets in 3d 4h
+  <div class="panel" id="p2" hidden>
+    <div class="steps">
+      <div class="step"><div><b>Open Terminal</b>
+        On a Mac: press ⌘ Space, type "Terminal", press Enter.</div></div>
+      <div class="step"><div><b>Paste these three lines, one at a time</b>
+        <div class="copy"><code id="c1">claude plugin marketplace add Thinkelution/session-pilot</code><button data-c="c1">Copy</button></div>
+        <div class="copy"><code id="c2">claude plugin install session-pilot@thinkelution</code><button data-c="c2">Copy</button></div>
+        <div class="copy"><code id="c3">claude plugin install session-pilot-ui@thinkelution</code><button data-c="c3">Copy</button></div>
+        <span class="small">The last line adds the strip above your prompt. It is separate because it runs inside Claude Code, so you choose.</span></div></div>
+      <div class="step"><div><b>Start a new chat and say hello</b>
+        session-pilot asks its three quick questions after the first reply.</div></div>
+    </div>
+  </div>
+  <div class="note"><b>Prefer a status line at the bottom of the Terminal too?</b> Type <code>/session-pilot:setup</code>. It asks first, keeps any status line you already have, and can be undone. <b>Not sure it worked?</b> Type <code>/session-pilot:doctor</code>.</div>
 
-<span class="dim">/pilot pane</span>
-🟠 Compact soon: 76% of context (152k / 200k)
-About 3 more turns before it gets critical.
-Recent turns
-██████░░░░  62%  124k  +9.1k
-███████░░░  69%  138k  +14k
-████████░░  76%  152k  +14k
-[Compact now] [Show band]</div>
-  <p class="sub">It asks before showing anything (band always, only when filling up, or never) and remembers your answer; change it with <code>/pilot-settings</code>. It is a <em>mod</em>: code that runs inside Claude Code with your permissions, which is why it is a separate, optional install. It needs Claude Code v2.1.287 or later and does not draw in the VS Code extension, cloud sessions or Cowork; the text alerts still work there.</p>
+  <h2 id="developers">Useful if you build with Claude Code</h2>
+  <p class="sub">Developers hit the limits of a single chat first: big refactors, long debugging sessions, many files, many tool calls. This is where session-pilot earns its keep.</p>
+  <div class="grid">
+    <div class="card"><b>Long agent runs stay healthy</b><span class="t">See the context fill as Claude reads files and runs tools, and compact at a natural pause instead of in the middle of a fix.</span></div>
+    <div class="card"><b>Compaction keeps engineering state</b><span class="t">The compact focus is set to decisions made, open TODOs, file paths and failing tests, so Claude does not forget what is broken.</span></div>
+    <div class="card"><b>Catches token waste</b><span class="t">Flags files re-read over and over and oversized tool output (huge logs, big diffs) as they happen, and warns when a big idle context has gone cold and will be expensive to resume.</span></div>
+    <div class="card"><b>Handoffs between sessions</b><span class="t">A summary is saved at 75% and before every compaction, and offered to Claude at the next session start in that repo.</span></div>
+    <div class="card"><b>Know your budget</b><span class="t">5-hour and weekly limits next to context, plus <code>/session-pilot:history</code> for how big your recent sessions grew.</span></div>
+    <div class="card"><b>Tunable</b><span class="t">Three alert styles, or fine-tune thresholds in <code>~/.claude/session-pilot/policy.json</code>. Zero dependencies, fails open, MIT licensed.</span></div>
+  </div>
+  <h3>Also a working example for plugin authors</h3>
+  <ul class="tick">
+    <li>A plugin with hooks (<code>SessionStart</code>, <code>UserPromptSubmit</code>, <code>PostToolUse</code>, <code>PreCompact</code>, <code>Stop</code>), slash commands and a skill.</li>
+    <li>A marketplace that ships two plugins from one repo, one of them a UI mod with a prompt-box band, buttons, a pane and remembered preferences.</li>
+    <li>Guided, reversible setup that edits user settings only with consent and a backup.</li>
+    <li>Try a local copy with <code>claude --plugin-dir /path/to/session-pilot</code>; the source is on <a href="https://github.com/Thinkelution/session-pilot">GitHub</a>.</li>
+  </ul>
 
-  <h2>You choose how chatty it is</h2>
-  <table>
-    <tr><th>Mode</th><th>Alerts at</th><th>Extras</th></tr>
-    <tr><td><code>quiet</code></td><td>80% and 90%</td><td>No waste or idle notes</td></tr>
-    <tr><td><code>balanced</code> (default)</td><td>60%, 75%, 88%</td><td>Waste and idle notes</td></tr>
-    <tr><td><code>proactive</code></td><td>50%, 65%, 80%</td><td>Stricter waste detection</td></tr>
-  </table>
-  <p class="sub" style="margin-top:12px">Switch with <code>/session-pilot:mode quiet</code>. Pause everything for a while with <code>/session-pilot:snooze 1h</code>.</p>
+  <h2 id="faq">Questions</h2>
+  <details><summary>Is it free? Does it use my usage?</summary><p>It is free and open source. The alerts and strip use almost nothing. The only thing that uses a little of your plan is the <b>✨ Optimize prompt</b> button, which asks a small, fast model to rewrite your draft (a few hundred words at most), and only when you press it.</p></details>
+  <details><summary>Will it change my messages or compact without asking?</summary><p>No. Optimize prompt puts a suggestion in the box for you to review, with Undo. Compact is a button you press. In the desktop app, the button fills in the compact command and you press Enter to confirm, because the app does not let add-ons start it directly yet. In the Terminal, one click does it.</p></details>
+  <details><summary>Why does the Compact button not show?</summary><p>It appears when the chat is 60% full, so it stays out of the way while you have plenty of room.</p></details>
+  <details><summary>Where does it work?</summary><p>Claude Code in the Terminal and the desktop app's Code tab (strip, buttons, limits, alerts). In the VS Code extension, cloud sessions and Cowork/chat, the text alerts work but the strip does not appear. Cowork is untested so far.</p></details>
+  <details><summary>Can I see how many limit resets I have left?</summary><p>Claude only reports how much you have used and when each limit resets, so that is what the strip shows.</p></details>
+  <details><summary>How do I turn it off or quiet it?</summary><p>Type <code>/session-pilot:snooze 1h</code> to pause alerts, <code>/session-pilot:mode quiet</code> for fewer alerts, or <code>/pilot-settings</code> to hide the strip. To remove it fully, run <code>claude plugin uninstall session-pilot@thinkelution</code>.</p></details>
+  <details><summary>Something is not working</summary><p>Type <code>/session-pilot:doctor</code>. It checks everything and tells you how to fix what it finds.</p></details>
+  <details><summary>Is it safe?</summary><p>The core plugin only reads the conversation file on your computer to measure its size and shows messages; it never changes your prompts or sends your chats anywhere. The strip add-on runs inside Claude Code with your permissions, which is why it is optional. The code is open on GitHub for anyone to read.</p></details>
 
-  <h2>Commands</h2>
-  <table>
-    <tr><th>Command</th><th>What it does</th></tr>
-    <tr><td><code>/session-pilot:status</code></td><td>Health, runway, waste and one next step</td></tr>
-    <tr><td><code>/session-pilot:setup</code></td><td>Guided status line setup (<code>undo</code> to revert)</td></tr>
-    <tr><td><code>/session-pilot:mode</code></td><td>quiet, balanced or proactive</td></tr>
-    <tr><td><code>/session-pilot:snooze</code></td><td>Pause alerts: 30m, 1h, 4h, off</td></tr>
-    <tr><td><code>/session-pilot:handoff</code></td><td>Write a handoff for the next session</td></tr>
-    <tr><td><code>/session-pilot:history</code></td><td>Recent sessions, peak context and output</td></tr>
-    <tr><td><code>/session-pilot:doctor</code></td><td>Checks the install and tells you how to fix problems</td></tr>
-  </table>
+  <h2>For the curious</h2>
+  <details><summary>All commands</summary>
+    <table>
+      <tr><th>Type this</th><th>It does this</th></tr>
+      <tr><td><code>/session-pilot:status</code></td><td>Plain summary of how the chat is doing and the next step</td></tr>
+      <tr><td><code>/session-pilot:setup</code></td><td>Adds a status line to the Terminal (<code>undo</code> reverses it)</td></tr>
+      <tr><td><code>/session-pilot:mode</code></td><td>Quiet, balanced or proactive</td></tr>
+      <tr><td><code>/session-pilot:snooze</code></td><td>Pause alerts for 30m, 1h or 4h</td></tr>
+      <tr><td><code>/session-pilot:handoff</code></td><td>Save a summary for the next chat now</td></tr>
+      <tr><td><code>/session-pilot:history</code></td><td>Recent chats and how big they got</td></tr>
+      <tr><td><code>/session-pilot:doctor</code></td><td>Checks the install and suggests fixes</td></tr>
+      <tr><td><code>/pilot</code>, <code>/pilot-settings</code></td><td>Details panel, and your strip preferences</td></tr>
+    </table>
+  </details>
+  <details><summary>Alert styles</summary>
+    <table>
+      <tr><th>Style</th><th>Speaks up at</th><th>Good for</th></tr>
+      <tr><td>Quiet</td><td>80% and 90% full</td><td>Short chats, minimal noise</td></tr>
+      <tr><td>Balanced (default)</td><td>60%, 75%, 88%</td><td>Most people</td></tr>
+      <tr><td>Proactive</td><td>50%, 65%, 80%</td><td>Long, heavy sessions</td></tr>
+    </table>
+  </details>
+  <details><summary>The small print</summary><p>Built for Claude Code. The core plugin needs Node 18+ and the strip needs Claude Code 2.1.287+. Alerts can only advise: they cannot rewrite your messages. Open source under the MIT license.</p></details>
 
-  <h2>Limits</h2>
-  <p>Hooks add advice and show messages; they cannot rewrite your prompts or run <code>/compact</code> for you, so session-pilot recommends and you decide. Zero dependencies; Node 18+. Cowork support depends on its plugin and hook support and is untested.</p>
-
-  <footer>session-pilot v0.3.1 · session-pilot-ui v0.4.4 · MIT</footer>
+  <footer>session-pilot v0.3.1 · strip v0.4.4 · MIT · <a href="https://github.com/Thinkelution/session-pilot">GitHub</a></footer>
 </main>
+<script>
+  document.querySelectorAll('.copy button').forEach(function(b){
+    b.addEventListener('click',function(){
+      var t=document.getElementById(b.dataset.c).textContent;
+      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1500)},function(){});
+    });
+  });
+  document.querySelectorAll('.tabs button').forEach(function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-selected',x===t)});
+      document.querySelectorAll('.panel').forEach(function(p){p.hidden=p.id!==t.dataset.p});
+    });
+  });
+</script>
 </body>
 </html>
