@@ -1,12 +1,19 @@
 {
   "name": "thinkelution",
   "description": "Tools from Thinkelution",
-  "owner": { "name": "Vivek" },
+  "owner": {
+    "name": "Vivek"
+  },
   "plugins": [
     {
       "name": "session-pilot",
       "source": "./",
       "description": "Closed-loop session optimizer: context alerts, handoffs, waste detection and a status line."
+    },
+    {
+      "name": "session-pilot-ui",
+      "source": "./ui",
+      "description": "Optional live UI for Claude Code (terminal and Desktop Code tab): context band above the prompt with a Compact button, and a /pilot details pane. Runs as a mod with your permissions."
     }
   ]
 }

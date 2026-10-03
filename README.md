@@ -18,6 +18,12 @@ For local development: `claude --plugin-dir /path/to/session-pilot`.
 - **Handoff:** saved at 75%+ and before every compaction; offered to Claude at the next session start in that folder.
 - **Waste notes:** files re-read repeatedly, oversized tool output, and an idle-cache warning.
 
+## Optional live UI (Claude Code terminal and Desktop Code tab)
+```bash
+claude plugin install session-pilot-ui@thinkelution
+```
+A band above the prompt with the context state and a one-click **Compact** button, plus a `/pilot` details pane. It is a *mod*: code that runs inside Claude Code with your permissions, so it is a separate, optional install. Requires Claude Code v2.1.287+. It does not draw in the VS Code extension, cloud sessions or Cowork/chat; the hook alerts still work there. Details: [ui/README.md](ui/README.md).
+
 ## Commands
 | Command | Purpose |
 |---|---|
