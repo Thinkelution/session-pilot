@@ -210,6 +210,14 @@ export const register: Register = on => {
     return { text: 'Session pilot settings updated.' }
   })
 
+  // Compaction changes the context without a turn finishing, so re-read it here or the band keeps the old number.
+  on('session.compact', async ($, e, next) => {
+    const ran = await next(e)
+    await update($, history, () => [])
+    await sample($)
+    return ran
+  })
+
   on('turn.complete', async ($, e, next) => {
     const ran = await next(e)
     if (!e.agentId) {
