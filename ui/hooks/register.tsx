@@ -68,6 +68,16 @@ async function loadPrefs($: any) {
   if (saved && saved.asked) await update($, prefs, () => ({ ...DEFAULTS, ...saved }))
 }
 
+// The core session-pilot plugin reads its alert mode from this file.
+async function writeMode($: any, mode: string) {
+  try {
+    const home = await $.env.get('HOME')
+    if (home) await $.fs.write(`${home}/.claude/session-pilot/mode.json`, JSON.stringify({ mode }))
+  } catch (_) {
+    // core plugin not installed or folder missing: the band prefs still apply
+  }
+}
+
 // Asks once (and again on /pilot-settings). A dismissed dialog stores nothing, so it asks again next session.
 async function askPrefs($: any) {
   try {
@@ -76,6 +86,11 @@ async function askPrefs($: any) {
       header: 'Band',
     })
     const t = await $.ui.ask('Show a pop-up when context passes 75%?', { options: ['Yes', 'No'], header: 'Alerts' })
+    const m = await $.ui.ask('How chatty should session-pilot be overall?', {
+      options: ['Balanced (recommended)', 'Quiet', 'Proactive'],
+      header: 'Mode',
+    })
+    await writeMode($, m.startsWith('Quiet') ? 'quiet' : m.startsWith('Proactive') ? 'proactive' : 'balanced')
     const band = b === 'Always' ? 'always' : b.startsWith('Only') ? 'warn' : 'off'
     await savePrefs($, { asked: true, band, toast: t === 'Yes' })
     $.ui.toast('Saved. Change it any time with /pilot-settings.')
