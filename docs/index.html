@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>session-pilot: keep long Claude chats on track</title>
 <meta name="description" content="A free add-on for Claude Code that tells you when a chat is getting full, helps you tidy it up in one click, and keeps an eye on your usage limits.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="theme-color" content="#171513">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Scope+One&display=swap" rel="stylesheet">
@@ -19,6 +21,8 @@
   :root{--brand:'Scope One',Georgia,'Times New Roman',serif}
   .top{background:#171513;color:#f1ede8;border-bottom:1px solid #2c2926}
   .top .in{max-width:820px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brandwrap{display:flex;align-items:center;gap:12px}
+  .brandwrap img{width:42px;height:42px;display:block}
   .brand{line-height:1.1}
   .brand .name{display:block;font-family:var(--brand);font-size:1.7rem;letter-spacing:.01em;-webkit-text-stroke:.9px currentColor;paint-order:stroke fill}
   .brand .by{display:block;font-family:var(--brand);font-size:.95rem;color:#c9c2b9;margin-top:3px}
@@ -93,7 +97,7 @@
 </head>
 <body>
 <header class="top"><div class="in">
-  <div class="brand"><span class="name">Session-pilot</span><span class="by">by <b>Thinkelution</b></span></div>
+  <div class="brandwrap"><img src="logo.svg" alt="" width="42" height="42"><div class="brand"><span class="name">Session-pilot</span><span class="by">by <b>Thinkelution</b></span></div></div>
   <nav><a href="#how">How it helps</a><a href="#install">Install</a><a href="#developers">For developers</a><a href="#faq">Questions</a><a href="https://github.com/Thinkelution/session-pilot">GitHub</a></nav>
 </div></header>
 <main>
