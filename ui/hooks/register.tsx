@@ -139,15 +139,20 @@ function isVague(text: string) {
   return words <= 8 && !/[\/`.]/.test(t)
 }
 
-function untilReset(iso: string | undefined, now: number) {
+function eta(iso: string | undefined, now: number) {
   if (!iso) return ''
   const ms = Date.parse(iso) - now
   if (!(ms > 0)) return ''
   const m = Math.round(ms / 60000)
-  if (m < 60) return ` (resets in ${m}m)`
+  if (m < 60) return `${m}m`
   const h = Math.floor(m / 60)
-  if (h < 48) return ` (resets in ${h}h ${m % 60}m)`
-  return ` (resets in ${Math.floor(h / 24)}d ${h % 24}h)`
+  if (h < 48) return `${h}h ${String(m % 60).padStart(2, '0')}m`
+  return `${Math.floor(h / 24)}d ${h % 24}h`
+}
+
+function bar(pct: number) {
+  const n = Math.max(0, Math.min(10, Math.round(pct / 10)))
+  return '█'.repeat(n) + '░'.repeat(10 - n)
 }
 
 export const register: Register = on => {
@@ -207,30 +212,51 @@ export const register: Register = on => {
     const vague = isVague(draft.text)
     const { Box, Text, Button } = $.ui.resolve(e)
 
+    const limitColor = (v: number) => (v >= 90 ? 'red' : v >= 75 ? 'yellow' : undefined)
+
     return (
-      <Box flexDirection="column">
-        <Box>
-          <Text color={lv.color} bold>
-            {lv.emoji} {Math.round(last.pct)}%{' '}
-          </Text>
-          <Text dimColor>
-            {fmt(last.tokens)}/{fmt(last.window)}
-            {left !== null && lv.n < 3 ? ` · ~${left} turns left` : ''}
-            {lv.n >= 1 ? ` · ${lv.label}` : ''}
-            {'  '}
-          </Text>
-          {lv.n >= 1 && <Button key="compact" label="Compact" onPress={() => compact($)} />}
-          <Button key="optimize" label={vague ? '✨ Optimize prompt (short draft)' : '✨ Optimize prompt'} onPress={() => optimizePrompt($)} />
-          {undo !== '' && <Button key="undo" label="Undo" onPress={() => undoOptimize($)} />}
-          <Button key="details" label="Details" onPress={() => $.ui.open({ id: PANE, title: 'Session pilot', focus: true })} />
-          <Button key="hide" label="Hide" onPress={() => savePrefs($, { ...p, band: 'off' })} />
+      <Box flexDirection="column" paddingX={1}>
+        <Box justifyContent="space-between" flexWrap="wrap" columnGap={2}>
+          <Box columnGap={2}>
+            <Text color={lv.color} bold>
+              {lv.emoji} {String(Math.round(last.pct)).padStart(2)}%
+            </Text>
+            <Text color={lv.color}>{bar(last.pct)}</Text>
+            <Text dimColor>
+              {fmt(last.tokens)} / {fmt(last.window)}
+              {left !== null && lv.n < 3 ? `  ·  ~${left} turns left` : ''}
+              {lv.n >= 1 ? `  ·  ${lv.label}` : ''}
+            </Text>
+          </Box>
+          <Box columnGap={1}>
+            {lv.n >= 1 && <Button key="compact" label="Compact" onPress={() => compact($)} />}
+            <Button key="optimize" label={vague ? '✨ Optimize prompt · short draft' : '✨ Optimize prompt'} onPress={() => optimizePrompt($)} />
+            {undo !== '' && <Button key="undo" label="Undo" onPress={() => undoOptimize($)} />}
+            <Button key="details" label="Details" onPress={() => $.ui.open({ id: PANE, title: 'Session pilot', focus: true })} />
+            <Button key="hide" label="Hide" onPress={() => savePrefs($, { ...p, band: 'off' })} />
+          </Box>
         </Box>
         {(five || week) && (
-          <Text dimColor>
-            {five ? `5h limit ${Math.round(five.percentUsed)}%${untilReset(five.resetsAt, now)}` : ''}
-            {five && week ? ' · ' : ''}
-            {week ? `weekly limit ${Math.round(week.percentUsed)}%${untilReset(week.resetsAt, now)}` : ''}
-          </Text>
+          <Box columnGap={4}>
+            {five && (
+              <Box columnGap={1}>
+                <Text dimColor>5h</Text>
+                <Text color={limitColor(five.percentUsed)}>{bar(five.percentUsed)}</Text>
+                <Text dimColor>
+                  {String(Math.round(five.percentUsed)).padStart(2)}%{eta(five.resetsAt, now) ? `  resets in ${eta(five.resetsAt, now)}` : ''}
+                </Text>
+              </Box>
+            )}
+            {week && (
+              <Box columnGap={1}>
+                <Text dimColor>Week</Text>
+                <Text color={limitColor(week.percentUsed)}>{bar(week.percentUsed)}</Text>
+                <Text dimColor>
+                  {String(Math.round(week.percentUsed)).padStart(2)}%{eta(week.resetsAt, now) ? `  resets in ${eta(week.resetsAt, now)}` : ''}
+                </Text>
+              </Box>
+            )}
+          </Box>
         )}
       </Box>
     )
