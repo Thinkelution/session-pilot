@@ -53,11 +53,29 @@ async function sample($: any) {
   return u
 }
 
+// Compacts directly where the app allows it (the terminal). The Desktop app runs sessions in a mode where
+// $.session.compact is not available yet, so there the command is put in the prompt box for the person to confirm.
 async function compact($: any) {
-  $.ui.toast('Compacting…')
-  const r = await $.session.compact({ instructions: HINT })
-  await update($, history, () => [])
-  return r
+  try {
+    $.ui.toast('Compacting…')
+    const r = await $.session.compact({ instructions: HINT })
+    if (r && r.skip) {
+      $.ui.toast(`Compaction skipped: ${r.skip}`)
+      return r
+    }
+    await update($, history, () => [])
+    $.ui.toast('Compacted.')
+    return r
+  } catch (_) {
+    const draft = await $.prompt.read()
+    if (draft.text.trim()) await update($, original, () => draft.text)
+    await $.prompt.fill({ text: `/compact ${HINT}`, mode: 'replace' })
+    $.ui.toast(
+      draft.text.trim()
+        ? 'Press Enter to compact. Your draft is saved; use Undo to get it back.'
+        : 'Press Enter to compact.',
+    )
+  }
 }
 
 async function savePrefs($: any, next: Prefs) {
@@ -230,24 +248,24 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column" paddingX={1} rowGap={1}>
-        <Box justifyContent="space-between" flexWrap="wrap" columnGap={2}>
-          <Box columnGap={2}>
+        <Box justifyContent="space-between" columnGap={2}>
+          <Box columnGap={2} flexShrink={1}>
             <Text color={lv.color} bold>
               {lv.emoji} {String(Math.round(last.pct)).padStart(2)}%
             </Text>
             <Text color={lv.color}>{bar(last.pct)}</Text>
-            <Text dimColor>
-              {fmt(last.tokens)} / {fmt(last.window)}
-              {left !== null && lv.n < 3 ? `  ·  ~${left} turns left` : ''}
-              {lv.n >= 1 ? `  ·  ${lv.label}` : ''}
+            <Text dimColor wrap="truncate">
+              {fmt(last.tokens)}/{fmt(last.window)}
+              {left !== null && lv.n < 3 ? ` · ~${left} turns left` : ''}
+              {lv.n >= 2 ? ` · ${lv.label}` : ''}
             </Text>
           </Box>
-          <Box columnGap={1}>
+          <Box columnGap={1} flexShrink={0}>
             {lv.n >= 1 && <Button key="compact" label="Compact" onPress={() => compact($)} />}
-            <Button key="optimize" label={vague ? '✨ Optimize prompt · short draft' : '✨ Optimize prompt'} onPress={() => optimizePrompt($)} />
+            <Button key="optimize" label={vague ? '✨ Optimize prompt •' : '✨ Optimize prompt'} onPress={() => optimizePrompt($)} />
             {undo !== '' && <Button key="undo" label="Undo" onPress={() => undoOptimize($)} />}
-            <Button key="details" label="Details" onPress={() => $.ui.open({ id: PANE, title: 'Session pilot', focus: true })} />
-            <Button key="hide" label="Hide" onPress={() => savePrefs($, { ...p, band: 'off' })} />
+            <Button key="details" label="≡" onPress={() => $.ui.open({ id: PANE, title: 'Session pilot', focus: true })} />
+            <Button key="hide" label="✕" onPress={() => savePrefs($, { ...p, band: 'off' })} />
           </Box>
         </Box>
         {(five || week) && (
