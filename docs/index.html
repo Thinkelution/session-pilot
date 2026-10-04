@@ -184,6 +184,17 @@
   </div>
   <div class="note"><b>Prefer a status line at the bottom of the Terminal too?</b> Type <code>/session-pilot:setup</code>. It asks first, keeps any status line you already have, and can be undone. <b>Not sure it worked?</b> Type <code>/session-pilot:doctor</code>.</div>
 
+  <div class="card" style="margin-top:18px">
+    <b>Already have chats open? Start it up in those too</b>
+    <span class="t">A chat loads its add-ons once, when it starts. Chats you opened <i>before</i> installing won't have session-pilot yet, and no add-on can switch itself on inside a running chat. New chats get it automatically; you don't need to type anything.<br><br>
+    For an older chat, try these in order:
+    <ol style="margin:8px 0 0;padding-left:20px">
+      <li><b>Quit Claude completely and reopen it</b>, open the old chat, and send a message. The chat usually restarts and picks up what you installed.</li>
+      <li><b>Still nothing?</b> Start a <b>new chat in the same folder</b> and paste a short summary of where you were. Session-pilot also saves a handoff summary at 75% full, and offers it at the start of the next chat in that folder.</li>
+      <li><b>Not sure it's on?</b> Type <code>/session-pilot:doctor</code>. It tells you what is running and how to fix what isn't.</li>
+    </ol></span>
+  </div>
+
   <h2 id="developers">Useful if you build with Claude Code</h2>
   <p class="sub">Developers hit the limits of a single chat first: big refactors, long debugging sessions, many files, many tool calls. This is where session-pilot earns its keep.</p>
   <div class="grid">
@@ -205,6 +216,7 @@
   <h2 id="faq">Questions</h2>
   <details><summary>Is it free? Does it use my usage?</summary><p>It is free and open source. The alerts and strip use almost nothing. The only thing that uses a little of your plan is the <b>✨ Optimize prompt</b> button, which asks a small, fast model to rewrite your draft (a few hundred words at most), and only when you press it.</p></details>
   <details><summary>Will it change my messages or compact without asking?</summary><p>No. Optimize prompt puts a suggestion in the box for you to review, with Undo. Compact is a button you press. In the desktop app, the button fills in the compact command and you press Enter to confirm, because the app does not let add-ons start it directly yet. In the Terminal, one click does it.</p></details>
+  <details><summary>It works in new chats but not in my old ones</summary><p>That is expected. A chat loads its add-ons when it starts, so chats opened before you installed session-pilot do not have it. Quit and reopen Claude, then send a message in the old chat. If it still shows nothing, start a new chat in the same folder (the handoff summary helps you carry on).</p></details>
   <details><summary>Why does the Compact button not show?</summary><p>It appears when the chat is 60% full, so it stays out of the way while you have plenty of room.</p></details>
   <details><summary>Where does it work?</summary><p>Claude Code in the Terminal and the desktop app's Code tab (strip, buttons, limits, alerts). In the VS Code extension, cloud sessions and Cowork/chat, the text alerts work but the strip does not appear. Cowork is untested so far.</p></details>
   <details><summary>Can I see how many limit resets I have left?</summary><p>Claude only reports how much you have used and when each limit resets, so that is what the strip shows.</p></details>
