@@ -13,7 +13,7 @@
     {
       "name": "session-pilot-ui",
       "source": "./ui",
-      "description": "Optional live UI for Claude Code (terminal and Desktop Code tab): context band above the prompt with a Compact button, and a /pilot details pane. Runs as a mod with your permissions."
+      "description": "Optional live UI for Claude Code (terminal and Desktop Code tab): a band above the prompt with context status, Compact, Optimize prompt and 5-hour/weekly limits, plus a /pilot details pane. Runs as a mod with your permissions."
     }
   ]
 }
